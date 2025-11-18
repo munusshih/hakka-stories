@@ -43,6 +43,7 @@ body {
     border: 1px solid #333;
     text-align: center;
     border-radius: 2px;
+    transition: transform 0.1s ease;
 }
 
 .board-header {
@@ -95,8 +96,24 @@ body {
 .story-row {
     display: grid;
     grid-template-columns: 1fr 3fr 1fr 1fr;
-    transition: background 0.2s ease;
+    transition: background 0.2s ease, opacity 0.5s ease, transform 0.5s ease;
     margin: 1rem;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.story-row.playing {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.story-row.fading-out {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.story-row.fading-in {
+    opacity: 0;
+    transform: translateY(20px);
 }
 
 .time-column,
@@ -153,4 +170,77 @@ body {
 
 .stories-list::-webkit-scrollbar-thumb:hover {
     background: #ccc;
+}
+
+/* Subtitle styling for playing stories */
+.subtitle-row {
+    grid-column: 1 / -1;
+    margin: 0 1rem 1rem 1rem;
+    opacity: 0;
+    animation: fadeInSubtitle 0.5s ease forwards;
+}
+
+.subtitle-text {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 1.2rem;
+    color: #fff;
+    text-align: center;
+    border-left: 4px solid #fff;
+}
+
+@keyframes fadeInSubtitle {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes flipY {
+    0% {
+        transform: rotateX(0deg);
+        background-color: #2a2a2a;
+        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    25% {
+        transform: rotateX(-15deg);
+        background-color: #333;
+        animation-timing-function: cubic-bezier(0.55, 0.06, 0.68, 0.19);
+    }
+
+    50% {
+        transform: rotateX(-90deg);
+        background-color: #555;
+        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    75% {
+        transform: rotateX(-75deg);
+        background-color: #333;
+        animation-timing-function: cubic-bezier(0.55, 0.06, 0.68, 0.19);
+    }
+
+    100% {
+        transform: rotateX(0deg);
+        background-color: #2a2a2a;
+    }
+}
+
+/* Flicker effect for selected rows */
+.story-row.flickering {
+    background-color: rgba(255, 255, 0, 0.3) !important;
+    box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+    border: 1px solid rgba(255, 255, 0, 0.8);
+}
+
+/* Smooth transitions for row animations */
+.story-row {
+    transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.15s ease;
 }

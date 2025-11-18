@@ -4,6 +4,7 @@ class Story {
     this.title = data.Title?.trim() || "UNTITLED";
     this.audioDuration = data["Audio Duration"] || "0:00";
     this.audioFile = data["Audio File"];
+    this.audioLanguage = data["Audio Language"] || "hakka"; // Default to hakka
     this.originalStatus = data.Status;
     this.mandarin = data.Mandarin;
     this.english = data.English;
@@ -13,6 +14,7 @@ class Story {
     this.currentStatus = this.mapStatus(this.originalStatus);
     this.isPlaying = false;
     this.hasBeenPlayed = false;
+    this.audioFailed = false;
     this.delayStartTime = null;
     this.delayDuration = 0;
 
@@ -32,23 +34,8 @@ class Story {
   }
 
   mapStatus(originalStatus) {
-    const statusMap = {
-      Backlog: "DELAYED",
-      "In Progress": "GATEOPEN",
-      Done: "ONTIME",
-      Cancelled: "CANCELED",
-    };
-
-    // Add some randomness for stories without clear status
-    if (!originalStatus || originalStatus === "Backlog") {
-      const random = Math.random();
-      if (random < 0.1) return "CANCELED";
-      if (random < 0.3) return "DELAYED";
-      if (random < 0.6) return "ONTIME";
-      return "GATEOPEN";
-    }
-
-    return statusMap[originalStatus] || "ONTIME";
+    // All stories start as ONTIME regardless of original status
+    return "ONTIME";
   }
 
   initializeAudio() {
@@ -65,18 +52,26 @@ class Story {
   }
 
   canPlay() {
-    if (!this.audioElement || this.hasBeenPlayed) return false;
+    // Check if story has valid audio first
+    const hasValidAudio =
+      this.audioFile &&
+      this.audioFile !== "" &&
+      this.audioDuration !== "0:00" &&
+      this.audioDuration !== "0:0" &&
+      this.audioDuration !== "";
+
+    if (!hasValidAudio || this.hasBeenPlayed) return false;
     if (this.currentStatus === "CANCELED") return false;
     if (this.currentStatus === "DELAYED") {
       return Date.now() - this.delayStartTime >= this.delayDuration;
     }
-    return this.currentStatus === "GATEOPEN";
+    return this.currentStatus === "ONTIME";
   }
 
   shouldRemove() {
     return (
       this.hasBeenPlayed &&
-      (this.currentStatus === "CANCELED" || !this.audioElement)
+      (this.currentStatus === "CANCELED" || !this.audioElement || this.audioFailed)
     );
   }
 
@@ -86,14 +81,24 @@ class Story {
     this.isPlaying = true;
     this.currentStatus = "GATEOPEN";
 
-    if (this.audioElement) {
+    // Don't start audio immediately - wait for startAudio() call
+    return true;
+  }
+
+  startAudio() {
+    if (this.audioElement && this.isPlaying) {
       this.audioElement.play().catch((error) => {
         console.error("Error playing audio:", error);
+        // Mark as failed and dispatch failure event
+        this.audioFailed = true;
+        this.currentStatus = "CANCELED";
+        const failureEvent = new CustomEvent("storyFailed", {
+          detail: { storyId: this.id, error: error.message }
+        });
+        document.dispatchEvent(failureEvent);
         this.onAudioEnded();
       });
     }
-
-    return true;
   }
 
   stop() {
@@ -133,12 +138,47 @@ class Story {
     return this.currentStatus;
   }
 
-  getSubtitle() {
-    // Return appropriate subtitle based on available languages
-    if (this.isPlaying) {
-      return this.english || this.mandarin || this.hakka || "";
+  getSubtitleConfiguration() {
+    const config = {
+      subtitles: [],
+      duration: this.audioElement ? this.audioElement.duration : 0,
+    };
+
+    const audioLang = this.audioLanguage.toLowerCase();
+
+    if (audioLang === "mandarin" || audioLang === "chinese") {
+      // Mandarin audio: show English subtitles
+      if (this.english) {
+        config.subtitles.push({
+          text: this.english,
+          language: "english",
+        });
+      }
+    } else if (audioLang === "hakka") {
+      // Hakka audio: show English and Mandarin subtitles
+      if (this.english) {
+        config.subtitles.push({
+          text: this.english,
+          language: "english",
+        });
+      }
+      if (this.mandarin) {
+        config.subtitles.push({
+          text: this.mandarin,
+          language: "mandarin",
+        });
+      }
+    } else if (audioLang === "english") {
+      // English audio: show Mandarin subtitles
+      if (this.mandarin) {
+        config.subtitles.push({
+          text: this.mandarin,
+          language: "mandarin",
+        });
+      }
     }
-    return "";
+
+    return config;
   }
 
   // Get story data for display
@@ -149,7 +189,7 @@ class Story {
       duration: this.audioDuration,
       status: this.getDisplayStatus(),
       isPlaying: this.isPlaying,
-      subtitle: this.getSubtitle(),
+      subtitleConfig: this.getSubtitleConfiguration(),
     };
   }
 }
