@@ -3,8 +3,9 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "fetch-stories": "node scripts/fetch-stories.js",
+    "dev": "npm run fetch-stories && astro dev",
+    "build": "npm run fetch-stories && astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
