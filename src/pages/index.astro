@@ -1,209 +1,44 @@
 ---
 // Display stories like a flight departure dashboard
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 // Read the stories data
 const storiesData = JSON.parse(
   fs.readFileSync(
-    path.join(process.cwd(), 'src', 'data', 'stories.json'),
-    'utf-8'
+    path.join(process.cwd(), "src", "data", "stories.json"),
+    "utf-8"
   )
 );
 ---
 
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Hakka Stories - Departure Board</title>
-	</head>
-	<body>
-		<div class="departure-board">
-			<header class="board-header">
-				<h1>HAKKA STORIES</h1>
-				<p class="subtitle">DEPARTURE BOARD</p>
-			</header>
-			
-			<div class="board-columns">
-				<div class="column-header">TIME</div>
-				<div class="column-header">DESTINATION</div>
-				<div class="column-header">ID</div>
-			</div>
-			
-			<div class="stories-list">
-				{storiesData.map((story) => (
-					<div class="story-row" key={story.ID}>
-						<div class="time-column">
-							{story['Audio Duration'] || '0:00'}
-						</div>
-						<div class="destination-column">
-							{story.Title && story.Title.trim() ? story.Title : 'UNTITLED'}
-						</div>
-						<div class="id-column">
-							{story.ID || story.id}
-						</div>
-					</div>
-				))}
-			</div>
-		</div>
-		
-		<style>
-			@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-			
-			* {
-				margin: 0;
-				padding: 0;
-				box-sizing: border-box;
-			}
-			
-			body {
-				background: #000;
-				color: #00ff00;
-				font-family: 'JetBrains Mono', monospace;
-				padding: 20px;
-				min-height: 100vh;
-			}
-			
-			.departure-board {
-				max-width: 1200px;
-				margin: 0 auto;
-				background: #1a1a1a;
-				border: 3px solid #333;
-				border-radius: 10px;
-				overflow: hidden;
-				box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-			}
-			
-			.board-header {
-				background: #222;
-				padding: 20px;
-				text-align: center;
-				border-bottom: 2px solid #333;
-			}
-			
-			.board-header h1 {
-				font-size: 2.5rem;
-				font-weight: 700;
-				letter-spacing: 3px;
-				color: #00ff00;
-				text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-			}
-			
-			.subtitle {
-				font-size: 1rem;
-				margin-top: 5px;
-				color: #888;
-				letter-spacing: 2px;
-			}
-			
-			.board-columns {
-				display: grid;
-				grid-template-columns: 150px 1fr 100px;
-				background: #333;
-				border-bottom: 2px solid #444;
-			}
-			
-			.column-header {
-				padding: 15px 20px;
-				font-weight: 700;
-				font-size: 1rem;
-				letter-spacing: 1px;
-				border-right: 1px solid #444;
-				color: #ffff00;
-				text-align: center;
-			}
-			
-			.column-header:last-child {
-				border-right: none;
-			}
-			
-			.stories-list {
-				max-height: 70vh;
-				overflow-y: auto;
-			}
-			
-			.story-row {
-				display: grid;
-				grid-template-columns: 150px 1fr 100px;
-				border-bottom: 1px solid #333;
-				transition: background 0.2s ease;
-			}
-			
-			.story-row:hover {
-				background: #2a2a2a;
-			}
-			
-			.time-column,
-			.destination-column,
-			.id-column {
-				padding: 15px 20px;
-				border-right: 1px solid #333;
-				font-size: 1rem;
-				display: flex;
-				align-items: center;
-			}
-			
-			.time-column {
-				justify-content: center;
-				font-family: 'JetBrains Mono', monospace;
-				color: #00ccff;
-			}
-			
-			.destination-column {
-				color: #fff;
-				text-transform: uppercase;
-				letter-spacing: 1px;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
-			}
-			
-			.id-column {
-				justify-content: center;
-				color: #ffaa00;
-				font-weight: 700;
-				border-right: none;
-			}
-			
-			/* Scrollbar styling */
-			.stories-list::-webkit-scrollbar {
-				width: 10px;
-			}
-			
-			.stories-list::-webkit-scrollbar-track {
-				background: #1a1a1a;
-			}
-			
-			.stories-list::-webkit-scrollbar-thumb {
-				background: #00ff00;
-				border-radius: 5px;
-			}
-			
-			.stories-list::-webkit-scrollbar-thumb:hover {
-				background: #00cc00;
-			}
-			
-			/* Terminal-like glow effect */
-			.departure-board {
-				position: relative;
-			}
-			
-			.departure-board::before {
-				content: '';
-				position: absolute;
-				top: -2px;
-				left: -2px;
-				right: -2px;
-				bottom: -2px;
-				background: linear-gradient(45deg, #00ff00, #00ccff, #ffaa00, #00ff00);
-				border-radius: 12px;
-				z-index: -1;
-				opacity: 0.3;
-				filter: blur(3px);
-			}
-		</style>
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Hakka Stories - Departure Board</title>
+    <link rel="stylesheet" href="/src/styles/dashboard.css" />
+  </head>
+  <body>
+    <div class="departure-board">
+      <header class="board-header">
+        <h1>GUEST STOP (IN TRANSIT)</h1>
+      </header>
+
+      <div class="board-columns">
+        <div class="column-header">TIME</div>
+        <div class="column-header">DESTINATION</div>
+        <div class="column-header">ID</div>
+        <div class="column-header">STATUS</div>
+      </div>
+
+      <div class="stories-list">
+        <!-- Stories will be populated by JavaScript -->
+      </div>
+    </div>
+
+    <script type="module" src="/src/scripts/main.js"></script>
+  </body>
 </html>

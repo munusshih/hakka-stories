@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+@font-face {
+    font-family: 'PegHoles';
+    src: url('/PegHolesRegular-L3lWg.ttf') format('truetype');
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    text-transform: uppercase;
+}
+
+.departure-board {
+    width: 100%;
+    margin: 0;
+    background: #000;
+    overflow: hidden;
+}
+
+/* Character box styling for departure board effect - only for stories */
+.time-column,
+.destination-column,
+.id-column,
+.status-column {
+    letter-spacing: 0.1em;
+    font-variant-ligatures: none;
+}
+
+.time-column .char,
+.destination-column .char,
+.id-column .char,
+.status-column .char {
+    display: inline-block;
+    border: 1px solid #333;
+    text-align: center;
+    border-radius: 2px;
+}
+
+.board-header {
+    background: #000;
+    padding: 20px;
+    text-align: left;
+}
+
+.board-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #fff;
+    text-shadow: none;
+}
+
+.subtitle {
+    font-size: 1rem;
+    margin-top: 15px;
+    color: #ccc;
+    letter-spacing: 2px;
+}
+
+.board-columns {
+    display: grid;
+    grid-template-columns: 1fr 3fr 1fr 1fr;
+    background: #000;
+    margin: 1rem;
+}
+
+.column-header {
+    font-weight: 700;
+    font-size: 4rem;
+    color: #fff;
+    text-align: left;
+    justify-content: flex-start;
+    display: flex;
+    align-items: center;
+}
+
+.time-column .char,
+.destination-column .char,
+.id-column .char,
+.status-column .char {
+    border-color: #2a2a2a;
+    color: #fff;
+    font-size: 8rem;
+}
+
+.story-row {
+    display: grid;
+    grid-template-columns: 1fr 3fr 1fr 1fr;
+    transition: background 0.2s ease;
+    margin: 1rem;
+}
+
+.time-column,
+.destination-column,
+.id-column,
+.status-column {
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    font-family: 'PegHoles', monospace;
+    overflow: hidden;
+}
+
+.time-column {
+    justify-content: flex-start;
+    color: #fff;
+}
+
+.destination-column {
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    justify-content: flex-start;
+}
+
+.id-column {
+    justify-content: flex-start;
+    color: #fff;
+    font-weight: 700;
+}
+
+.status-column {
+    justify-content: flex-start;
+    color: #fff;
+    font-weight: 700;
+}
+
+/* Scrollbar styling */
+.stories-list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.stories-list::-webkit-scrollbar-track {
+    background: #000;
+}
+
+.stories-list::-webkit-scrollbar-thumb {
+    background: #fff;
+    border-radius: 5px;
+}
+
+.stories-list::-webkit-scrollbar-thumb:hover {
+    background: #ccc;
+}
