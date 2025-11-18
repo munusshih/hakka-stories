@@ -182,16 +182,18 @@ class DepartureBoard {
         }
       });
     } else {
-      // CSS fallback with more dramatic effect
+      // CSS fallback with black and white effect
       let flickerCount = 0;
       const flickerInterval = setInterval(() => {
         row.style.opacity = flickerCount % 2 === 0 ? '0.2' : '1';
-        row.style.backgroundColor = flickerCount % 2 === 0 ? 'rgba(255, 255, 0, 0.2)' : '';
+        row.style.backgroundColor = flickerCount % 2 === 0 ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+        row.style.color = flickerCount % 2 === 0 ? '#000' : '#fff';
         flickerCount++;
         if (flickerCount >= 6) {
           clearInterval(flickerInterval);
           row.style.opacity = '1';
           row.style.backgroundColor = '';
+          row.style.color = '';
           row.classList.remove('flickering');
         }
       }, 150);
