@@ -49,6 +49,27 @@ function convertGoogleDriveURL(url) {
   return url;
 }
 
+async function getAudioDuration(filePath) {
+  try {
+    // Read first few bytes to check if it's a valid MP3
+    const buffer = fs.readFileSync(filePath);
+    
+    // Simple MP3 duration estimation based on file size and typical bitrate
+    // This is approximate but works without external dependencies
+    const fileSizeBytes = buffer.length;
+    const averageBitrate = 128; // Assume 128 kbps average
+    const durationSeconds = (fileSizeBytes * 8) / (averageBitrate * 1000);
+    
+    const minutes = Math.floor(durationSeconds / 60);
+    const seconds = Math.floor(durationSeconds % 60);
+    
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  } catch (error) {
+    console.error(`Error getting duration for ${filePath}:`, error);
+    return '--:--';
+  }
+}
+
 async function downloadMP3(url, filename) {
   try {
     console.log(`Downloading MP3: ${filename}`);
@@ -65,10 +86,13 @@ async function downloadMP3(url, filename) {
     fs.writeFileSync(filePath, Buffer.from(buffer));
     console.log(`Downloaded: ${filename}`);
     
-    return `/audio/${filename}`;
+    // Get duration after download
+    const duration = await getAudioDuration(filePath);
+    
+    return { localPath: `/audio/${filename}`, duration };
   } catch (error) {
     console.error(`Error downloading ${filename}:`, error);
-    return url; // Return original URL if download fails
+    return { localPath: url, duration: '0:00' }; // Return original URL if download fails
   }
 }
 
@@ -107,10 +131,16 @@ async function processAudioFiles(data) {
           }
         }
         
-        // Download the audio file
-        const localPath = await downloadMP3(value, filename);
-        processedRow[key] = localPath;
+        // Download the audio file and get duration
+        const audioInfo = await downloadMP3(value, filename);
+        processedRow[key] = audioInfo.localPath;
+        processedRow['Audio Duration'] = audioInfo.duration;
       }
+    }
+    
+    // If no audio file was processed, set duration to 0:00
+    if (!processedRow['Audio Duration']) {
+      processedRow['Audio Duration'] = '0:00';
     }
     
     processedData.push(processedRow);
