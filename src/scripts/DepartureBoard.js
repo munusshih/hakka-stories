@@ -1,18 +1,18 @@
 import { Story } from "./Story.js";
 
 // Initialize GSAP FLIP if available
-if (typeof gsap !== 'undefined' && gsap.registerPlugin) {
+if (typeof gsap !== "undefined" && gsap.registerPlugin) {
   gsap.registerPlugin(Flip);
 }
 
 class DepartureBoard {
   constructor() {
     this.allStories = []; // All original stories
-    this.activeQueue = []; // Currently displayed stories (max 6)
+    this.activeQueue = []; // Currently displayed stories (max 5)
     this.bin = []; // Completed/canceled stories
     this.currentPlayingStory = null;
     this.updateInterval = null;
-    this.maxQueueSize = 6;
+    this.maxQueueSize = 5;
     this.isShowingSubtitles = false;
     this.subtitleContainer = null;
     this.columnWidths = {
@@ -37,27 +37,9 @@ class DepartureBoard {
     // Initial render
     this.renderBoard();
 
-    // Start random story selection timer
-    this.startRandomSelection();
-  }
-
-  startRandomSelection() {
-    // Select a random story immediately
-    this.selectRandomStory();
-    
-    // Schedule next selection with random interval
-    this.scheduleNextSelection();
-  }
-
-  scheduleNextSelection() {
-    // Random interval between 5-20 seconds (5000-20000ms)
-    const randomInterval = Math.floor(Math.random() * 15000) + 5000;
-    console.log(`Next story selection in ${randomInterval/1000} seconds`);
-    
-    this.selectionTimeout = setTimeout(() => {
+    setTimeout(() => {
       this.selectRandomStory();
-      this.scheduleNextSelection(); // Schedule the next one
-    }, randomInterval);
+    }, 8000);
   }
 
   setupEventListeners() {
@@ -75,12 +57,6 @@ class DepartureBoard {
     });
   }
 
-  // startUpdateLoop() {
-  //   this.updateInterval = setInterval(() => {
-  //     this.updateStories();
-  //   }, 1000); // Update every second
-  // }
-
   updateStories() {
     let needsRerender = false;
 
@@ -93,49 +69,20 @@ class DepartureBoard {
       }
     });
 
-    // Console log current state
-    console.log("=== DASHBOARD UPDATE ===");
-    console.log("Stories on dashboard:", this.activeQueue.map(s => ({
-      id: s.id,
-      title: s.title,
-      status: s.currentStatus,
-      hasAudio: !!(s.audioFile && s.audioFile !== "" && s.audioDuration !== "0:00"),
-      isPlaying: s.isPlaying
-    })));
-    
-    const availableStories = this.allStories.filter(
-      (story) => !this.bin.includes(story) && !this.activeQueue.includes(story)
-    );
-    console.log("Stories in backlog:", availableStories.map(s => ({
-      id: s.id,
-      title: s.title,
-      hasAudio: !!(s.audioFile && s.audioFile !== "" && s.audioDuration !== "0:00")
-    })));
-    
-    console.log("Stories in bin:", this.bin.map(s => ({
-      id: s.id,
-      title: s.title,
-      status: s.currentStatus
-    })));
-    console.log("Currently playing:", this.currentPlayingStory ? this.currentPlayingStory.id : "none");
-    console.log("========================");
-
     // Proactively mark stories without valid audio as CANCELED
     this.activeQueue.forEach((story) => {
       if (story.currentStatus !== "CANCELED") {
-        const hasValidAudio = story.audioFile && 
-                             story.audioFile !== "" &&
-                             story.audioDuration !== "0:00" &&
-                             story.audioDuration !== "0:0" &&
-                             story.audioDuration !== "";
-        
+        const hasValidAudio =
+          story.audioFile &&
+          story.audioFile !== "" &&
+          story.audioDuration !== "0:00" &&
+          story.audioDuration !== "0:0" &&
+          story.audioDuration !== "";
+
         if (!hasValidAudio) {
-          story.currentStatus = "CANCELED";
+          // Use centralized cancel function
+          this.cancelStory(story, 100);
           needsRerender = true;
-          // Trigger flip animation for this cancellation
-          setTimeout(() => {
-            this.animateStatusChange(story.id, "CANCELED");
-          }, 100);
         }
       }
     });
@@ -163,13 +110,11 @@ class DepartureBoard {
     const row = document.querySelector(`[data-story-id="${storyId}"]`);
     if (!row) return;
 
-    console.log(`Flickering row for story ${storyId}`);
-    
     // Add flicker class for styling
-    row.classList.add('flickering');
-    
+    row.classList.add("flickering");
+
     // Use GSAP if available, otherwise CSS
-    if (typeof gsap !== 'undefined') {
+    if (typeof gsap !== "undefined") {
       gsap.to(row, {
         opacity: 0.2,
         duration: 0.15,
@@ -177,70 +122,69 @@ class DepartureBoard {
         repeat: 5, // 3 full flickers (6 half-cycles)
         ease: "power2.inOut",
         onComplete: () => {
-          row.classList.remove('flickering');
+          row.classList.remove("flickering");
           gsap.set(row, { opacity: 1 }); // Ensure it ends at full opacity
-        }
+        },
       });
     } else {
       // CSS fallback with black and white effect
       let flickerCount = 0;
       const flickerInterval = setInterval(() => {
-        row.style.opacity = flickerCount % 2 === 0 ? '0.2' : '1';
-        row.style.backgroundColor = flickerCount % 2 === 0 ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
-        row.style.color = flickerCount % 2 === 0 ? '#000' : '#fff';
+        row.style.opacity = flickerCount % 2 === 0 ? "0.2" : "1";
+        row.style.backgroundColor =
+          flickerCount % 2 === 0
+            ? "rgba(255, 255, 255, 0.9)"
+            : "rgba(0, 0, 0, 0.8)";
+        row.style.color = flickerCount % 2 === 0 ? "#000" : "#fff";
         flickerCount++;
         if (flickerCount >= 6) {
           clearInterval(flickerInterval);
-          row.style.opacity = '1';
-          row.style.backgroundColor = '';
-          row.style.color = '';
-          row.classList.remove('flickering');
+          row.style.opacity = "1";
+          row.style.backgroundColor = "";
+          row.style.color = "";
+          row.classList.remove("flickering");
         }
       }, 150);
     }
   }
 
-  selectRandomStory() {
-    console.log("=== SELECTING RANDOM STORY ===");
-    console.log("Stories on dashboard:", this.activeQueue.map(s => ({
-      id: s.id,
-      title: s.title,
-      status: s.currentStatus,
-      hasAudio: !!(s.audioFile && s.audioFile !== "" && s.audioDuration !== "0:00"),
-      isPlaying: s.isPlaying,
-      canPlay: s.canPlay()
-    })));
-    
-    const availableStories = this.allStories.filter(
-      (story) => !this.bin.includes(story) && !this.activeQueue.includes(story)
+  verifyDashboardSync() {
+    const storiesList = document.querySelector(".stories-list");
+    if (!storiesList) return false;
+
+    const existingRows = storiesList.querySelectorAll(".story-row");
+    const existingIds = Array.from(existingRows).map((row) =>
+      row.getAttribute("data-story-id")
     );
-    console.log("Stories in backlog:", availableStories.map(s => ({
-      id: s.id,
-      title: s.title,
-      hasAudio: !!(s.audioFile && s.audioFile !== "" && s.audioDuration !== "0:00")
-    })));
-    
-    console.log("Stories in bin:", this.bin.map(s => ({
-      id: s.id,
-      title: s.title,
-      status: s.currentStatus
-    })));
-    console.log("Currently playing:", this.currentPlayingStory ? this.currentPlayingStory.id : "none");
-    console.log("==============================");
+    const activeIds = this.activeQueue.map((story) => story.id.toString());
+
+    const isInSync =
+      existingRows.length === this.activeQueue.length &&
+      JSON.stringify(existingIds) === JSON.stringify(activeIds);
+
+    if (!isInSync) {
+      // Force re-render to fix sync
+      this.renderBoard();
+    }
+
+    return isInSync;
+  }
+
+  selectRandomStory() {
+    // Verify dashboard is in sync before selecting
+    this.verifyDashboardSync();
 
     // If someone is currently playing, don't interrupt
     if (this.currentPlayingStory) {
-      console.log("Story already playing, waiting...");
       return;
     }
 
     // Get all stories on dashboard that could potentially be selected
-    const dashboardStories = this.activeQueue.filter(story => 
-      story.currentStatus !== "CANCELED" && !story.hasBeenPlayed
+    const dashboardStories = this.activeQueue.filter(
+      (story) => story.currentStatus !== "CANCELED" && !story.hasBeenPlayed
     );
 
     if (dashboardStories.length === 0) {
-      console.log("No available stories on dashboard");
       this.processCompletedStories();
       return;
     }
@@ -249,34 +193,25 @@ class DepartureBoard {
     const randomIndex = Math.floor(Math.random() * dashboardStories.length);
     const selectedStory = dashboardStories[randomIndex];
 
-    console.log(`Randomly selected story ${selectedStory.id}: ${selectedStory.title}`);
+    console.log(
+      `🎯 RANDOMLY SELECTED: Story ${selectedStory.id} - "${selectedStory.title}"`
+    );
 
     // Add flicker effect to show the row is selected
     this.flickerRow(selectedStory.id);
 
     // Check if story has valid audio
-    const hasValidAudio = selectedStory.audioFile && 
-                         selectedStory.audioFile !== "" &&
-                         selectedStory.audioDuration !== "0:00" &&
-                         selectedStory.audioDuration !== "0:0" &&
-                         selectedStory.audioDuration !== "";
+    const hasValidAudio =
+      selectedStory.audioFile &&
+      selectedStory.audioFile !== "" &&
+      selectedStory.audioDuration !== "0:00" &&
+      selectedStory.audioDuration !== "0:0" &&
+      selectedStory.audioDuration !== "";
 
     if (!hasValidAudio) {
-      // Set status to CANCELED and trigger animation
-      selectedStory.currentStatus = "CANCELED";
-
-      // Just animate the status change, no full re-render needed
-      setTimeout(() => {
-        this.animateStatusChange(selectedStory.id, "CANCELED");
-      }, 100);
-
-      // Wait 3-5 seconds before removing CANCELED story
+      // Use centralized cancel function with random delay
       const stayDuration = Math.floor(Math.random() * 2000) + 3000; // 3000-5000ms
-      console.log(`CANCELED story ${selectedStory.id} will be removed in ${stayDuration/1000} seconds`);
-      
-      setTimeout(() => {
-        this.moveToBinAndRefill(selectedStory);
-      }, stayDuration);
+      this.cancelStory(selectedStory, stayDuration);
       return;
     }
 
@@ -284,43 +219,19 @@ class DepartureBoard {
     const playResult = selectedStory.play();
     if (playResult) {
       // Successfully started playing
-      this.currentPlayingStory = selectedStory;
-      
-      // Wait a moment for any pending renders, then trigger flip animation
-      setTimeout(() => {
-        this.animateStatusChange(selectedStory.id, "GATEOPEN");
-        
-        // Only update the internal status after animation starts
-        setTimeout(() => {
-          this.currentPlayingStory.currentStatus = "GATEOPEN";
-        }, 1000);
-      }, 100);
-
-      // Wait 5 seconds after status change, then show fullscreen subtitles
-      setTimeout(() => {
-        this.showFullscreenSubtitles(selectedStory);
-      }, 5000);
+      this.startStoryPlayback(selectedStory);
     } else {
-      // Play failed, treat as canceled
-      console.log(`Story ${selectedStory.id} failed to play, marking as canceled`);
-      selectedStory.currentStatus = "CANCELED";
-      
-      // Animate to CANCELED and remove from dashboard
-      setTimeout(() => {
-        this.animateStatusChange(selectedStory.id, "CANCELED");
-        
-        // Move to bin after animation
-        setTimeout(() => {
-          this.moveToBinAndRefill(selectedStory);
-        }, 1000);
-      }, 100);
+      // Play failed, use centralized cancel function
+      this.cancelStory(selectedStory, 1000);
     }
   }
 
   onStoryFailed(storyId, error) {
-    console.log(`Story ${storyId} audio failed: ${error}`);
-    // Don't move to bin immediately - let subtitle play out
-    // The story will end naturally after subtitle duration
+    const story = this.activeQueue.find((s) => s.id == storyId);
+    if (story) {
+      // Use centralized cancel function
+      this.cancelStory(story, 1000);
+    }
   }
 
   onStoryEnded(storyId) {
@@ -364,18 +275,29 @@ class DepartureBoard {
     if (!storiesList) return;
 
     const existingRows = storiesList.querySelectorAll(".story-row");
-    
-    // If no rows exist, do initial render
-    if (existingRows.length === 0) {
+    const existingIds = Array.from(existingRows).map((row) =>
+      row.getAttribute("data-story-id")
+    );
+    const activeIds = this.activeQueue.map((story) => story.id.toString());
+
+    // If no rows exist or if the IDs don't match exactly, do a full re-render
+    if (
+      existingRows.length === 0 ||
+      existingRows.length !== this.activeQueue.length ||
+      JSON.stringify(existingIds) !== JSON.stringify(activeIds)
+    ) {
+      // Clear and rebuild
+      storiesList.innerHTML = "";
+
       this.activeQueue.forEach((story, index) => {
         const storyData = story.getDisplayData();
         const row = this.createStoryRow(storyData);
-        
+
         // Add simple fade-in animation for initial load
         row.style.opacity = "0";
         row.style.transform = "translateY(20px)";
         storiesList.appendChild(row);
-        
+
         setTimeout(() => {
           row.style.transition = "opacity 0.5s ease, transform 0.5s ease";
           row.style.opacity = "1";
@@ -383,7 +305,7 @@ class DepartureBoard {
         }, index * 100);
       });
     } else {
-      // Just update existing rows - don't do full re-render
+      // Update existing rows with current data
       existingRows.forEach((row, index) => {
         if (this.activeQueue[index]) {
           this.updateStoryRow(row, this.activeQueue[index].getDisplayData());
@@ -398,20 +320,49 @@ class DepartureBoard {
       (story) => !this.bin.includes(story) && !this.activeQueue.includes(story)
     );
 
+    console.log(`📊 QUEUE STATUS:`);
+    console.log(
+      `   Active Queue (${this.activeQueue.length}/${this.maxQueueSize}):`,
+      this.activeQueue.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
+    );
+    console.log(`   Available Stories (${availableStories.length}):`);
+    console.log(
+      `   In Bin (${this.bin.length}):`,
+      this.bin.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
+    );
+
     // If no stories available and bin is full, reset the bin to start over
     if (availableStories.length === 0 && this.activeQueue.length === 0) {
-      console.log("No available stories, resetting bin to restart cycle");
+      console.log(
+        `🔄 RESETTING: All stories consumed, emptying bin and restarting`
+      );
       this.bin = [];
-      // Refill with fresh stories
-      const freshStories = this.allStories.slice(0, this.maxQueueSize);
+      // Refill with fresh stories, shuffled randomly
+      const freshStories = [...this.allStories]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, this.maxQueueSize);
       this.activeQueue.push(...freshStories);
+      console.log(
+        `✨ NEW RANDOM QUEUE:`,
+        freshStories.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
+      );
       return;
     }
 
     const needed = this.maxQueueSize - this.activeQueue.length;
-    const toAdd = availableStories.slice(0, needed);
+    if (needed > 0) {
+      // Shuffle available stories before taking what we need
+      const shuffledAvailable = [...availableStories].sort(
+        () => Math.random() - 0.5
+      );
+      const toAdd = shuffledAvailable.slice(0, needed);
 
-    this.activeQueue.push(...toAdd);
+      this.activeQueue.push(...toAdd);
+      console.log(
+        `➕ ADDED TO QUEUE (${toAdd.length}):`,
+        toAdd.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
+      );
+    }
   }
 
   processCompletedStories() {
@@ -423,30 +374,76 @@ class DepartureBoard {
     );
 
     if (completedStories.length > 0) {
-      // Record FLIP state before changes
-      let state = null;
-      if (typeof Flip !== 'undefined') {
-        state = Flip.getState(".story-row");
-      }
-
-      // Move completed stories to bin
+      // Move completed stories to bin using centralized function
       completedStories.forEach((story) => {
-        const index = this.activeQueue.indexOf(story);
-        if (index > -1) {
-          this.activeQueue.splice(index, 1);
-          this.bin.push(story);
-        }
+        this.removeToBin(story);
       });
 
-      // Fill queue with new stories to maintain 6 stories
-      this.fillQueue();
-
-      // Ensure only currently playing story has GATEOPEN status
-      this.enforceGateOpenRule();
-
-      // Update board with targeted changes
-      this.updateBoardWithNewStory(state);
+      // Refresh the entire dashboard
+      this.refreshDashboard();
     }
+  }
+
+  removeToBin(story) {
+    const index = this.activeQueue.indexOf(story);
+    if (index > -1) {
+      this.activeQueue.splice(index, 1);
+      this.bin.push(story);
+      console.log(`🗑️ MOVED TO BIN: Story ${story.id} - "${story.title}"`);
+    }
+
+    // Staggered refresh operations with natural delays
+    setTimeout(() => {
+      this.refreshDashboard();
+    }, 2000);
+
+    setTimeout(() => {
+      this.selectRandomStory();
+    }, 8000);
+  }
+
+  cancelStory(story, delay = 3000) {
+    // Set status to CANCELED
+    story.currentStatus = "CANCELED";
+    story.hasBeenPlayed = true;
+
+    // Animate to CANCELED status
+    this.animateStatusChange(story.id, "CANCELED");
+
+    // Move to bin after delay
+    setTimeout(() => {
+      this.removeToBin(story);
+    }, delay);
+  }
+
+  setStoryStatus(story, status) {
+    story.currentStatus = status;
+    this.animateStatusChange(story.id, status);
+  }
+
+  startStoryPlayback(story) {
+    this.currentPlayingStory = story;
+
+    // Animate to GATEOPEN after short delay
+    setTimeout(() => {
+      this.setStoryStatus(story, "GATEOPEN");
+
+      // Update internal status after animation starts
+      setTimeout(() => {
+        this.currentPlayingStory.currentStatus = "GATEOPEN";
+      }, 1000);
+    }, 100);
+
+    // Show fullscreen subtitles after status change
+    setTimeout(() => {
+      this.showFullscreenSubtitles(story);
+    }, 5000);
+  }
+
+  refreshDashboard() {
+    this.fillQueue();
+    this.enforceGateOpenRule();
+    this.renderBoard();
   }
 
   enforceGateOpenRule() {
@@ -475,21 +472,23 @@ class DepartureBoard {
 
     // Update existing rows with current data
     const existingRows = storiesList.querySelectorAll(".story-row");
-    const currentStoryIds = Array.from(existingRows).map(row => 
+    const currentStoryIds = Array.from(existingRows).map((row) =>
       row.getAttribute("data-story-id")
     );
-    const newStoryIds = this.activeQueue.map(story => story.id.toString());
+    const newStoryIds = this.activeQueue.map((story) => story.id.toString());
 
     // Find which stories are new
-    const newStories = this.activeQueue.filter(story => 
-      !currentStoryIds.includes(story.id.toString())
+    const newStories = this.activeQueue.filter(
+      (story) => !currentStoryIds.includes(story.id.toString())
     );
 
     // Update existing rows that match current stories
     existingRows.forEach((row, index) => {
       const storyId = row.getAttribute("data-story-id");
-      const matchingStory = this.activeQueue.find(s => s.id.toString() === storyId);
-      
+      const matchingStory = this.activeQueue.find(
+        (s) => s.id.toString() === storyId
+      );
+
       if (matchingStory) {
         // Update the existing row
         this.updateStoryRow(row, matchingStory.getDisplayData());
@@ -498,159 +497,60 @@ class DepartureBoard {
         if (newStories.length > 0) {
           const newStory = newStories.shift();
           const newStoryData = newStory.getDisplayData();
-          
+
           // Update the row data and content
           row.setAttribute("data-story-id", newStory.id);
-          
+
           // Update each column
-          const timeCol = row.querySelector('.time-column');
-          const destCol = row.querySelector('.destination-column'); 
-          const idCol = row.querySelector('.id-column');
-          const statusCol = row.querySelector('.status-column');
-          
+          const timeCol = row.querySelector(".time-column");
+          const destCol = row.querySelector(".destination-column");
+          const idCol = row.querySelector(".id-column");
+          const statusCol = row.querySelector(".status-column");
+
           if (timeCol) {
-            timeCol.innerHTML = '';
-            timeCol.appendChild(this.createCharacterBoxes(newStoryData.duration, "time"));
+            timeCol.innerHTML = "";
+            timeCol.appendChild(
+              this.createCharacterBoxes(newStoryData.duration, "time")
+            );
           }
           if (destCol) {
-            destCol.innerHTML = '';
-            destCol.appendChild(this.createCharacterBoxes(newStoryData.title, "destination"));
+            destCol.innerHTML = "";
+            destCol.appendChild(
+              this.createCharacterBoxes(newStoryData.title, "destination")
+            );
           }
           if (idCol) {
-            idCol.innerHTML = '';
-            idCol.appendChild(this.createCharacterBoxes(newStoryData.id.toString(), "id"));
+            idCol.innerHTML = "";
+            idCol.appendChild(
+              this.createCharacterBoxes(newStoryData.id.toString(), "id")
+            );
           }
           if (statusCol) {
-            statusCol.innerHTML = '';
-            statusCol.appendChild(this.createCharacterBoxes(newStoryData.status, "status"));
+            statusCol.innerHTML = "";
+            statusCol.appendChild(
+              this.createCharacterBoxes(newStoryData.status, "status")
+            );
           }
         }
       }
     });
 
     // Apply FLIP animation only to changed elements
-    if (flipState && typeof Flip !== 'undefined') {
+    if (flipState && typeof Flip !== "undefined") {
       Flip.from(flipState, {
         duration: 0.4,
         ease: "power2.inOut",
-        targets: ".story-row"
+        targets: ".story-row",
       });
-    }
-  }
-
-  moveToBinAndRefill(story) {
-    const storyRow = document.querySelector(`[data-story-id="${story.id}"]`);
-    
-    console.log(`Fading out story ${story.id}`);
-    
-    // Fade out the current story row first (slower)
-    if (storyRow && typeof gsap !== 'undefined') {
-      gsap.to(storyRow, {
-        opacity: 0,
-        y: -30,
-        duration: 1.0, // Longer fade out
-        ease: "power2.in",
-        onComplete: () => {
-          // Wait additional 3-5 seconds before showing new story
-          const replacementDelay = Math.floor(Math.random() * 2000) + 3000; // 3000-5000ms
-          console.log(`New story will fade in after ${replacementDelay/1000} seconds`);
-          
-          setTimeout(() => {
-            this.replaceRowContent(story, storyRow);
-          }, replacementDelay);
-        }
-      });
-    } else if (storyRow) {
-      // CSS fallback with longer duration
-      storyRow.style.transition = "opacity 1.0s ease, transform 1.0s ease";
-      storyRow.style.opacity = "0";
-      storyRow.style.transform = "translateY(-30px)";
-      
-      setTimeout(() => {
-        const replacementDelay = Math.floor(Math.random() * 2000) + 3000;
-        setTimeout(() => {
-          this.replaceRowContent(story, storyRow);
-        }, replacementDelay);
-      }, 1000);
-    } else {
-      // No row found, just update data with delay
-      setTimeout(() => {
-        this.updateStoryData(story);
-      }, 4000);
-    }
-  }
-
-  replaceRowContent(oldStory, row) {
-    // Remove from active queue and add to bin
-    const index = this.activeQueue.indexOf(oldStory);
-    if (index > -1) {
-      this.activeQueue.splice(index, 1);
-      this.bin.push(oldStory);
-    }
-    
-    // Fill queue with new story
-    this.fillQueue();
-    
-    // Get the new story for this position
-    const newStory = this.activeQueue[index] || this.activeQueue[0];
-    if (newStory) {
-      const newStoryData = newStory.getDisplayData();
-      
-      // Update the row with new content
-      row.setAttribute("data-story-id", newStory.id);
-      
-      // Update each column
-      const timeCol = row.querySelector('.time-column');
-      const destCol = row.querySelector('.destination-column'); 
-      const idCol = row.querySelector('.id-column');
-      const statusCol = row.querySelector('.status-column');
-      
-      if (timeCol) {
-        timeCol.innerHTML = '';
-        timeCol.appendChild(this.createCharacterBoxes(newStoryData.duration, "time"));
-      }
-      if (destCol) {
-        destCol.innerHTML = '';
-        destCol.appendChild(this.createCharacterBoxes(newStoryData.title, "destination"));
-      }
-      if (idCol) {
-        idCol.innerHTML = '';
-        idCol.appendChild(this.createCharacterBoxes(newStoryData.id.toString(), "id"));
-      }
-      if (statusCol) {
-        statusCol.innerHTML = '';
-        statusCol.appendChild(this.createCharacterBoxes(newStoryData.status, "status"));
-      }
-      
-      // Fade the row back in with new content (slower)
-      if (typeof gsap !== 'undefined') {
-        gsap.to(row, {
-          opacity: 1,
-          y: 0,
-          duration: 1.0, // Longer fade in
-          ease: "power2.out"
-        });
-      } else {
-        // CSS fallback with longer duration
-        setTimeout(() => {
-          row.style.transition = "opacity 1.0s ease, transform 1.0s ease";
-          row.style.opacity = "1";
-          row.style.transform = "translateY(0)";
-        }, 100);
-      }
     }
   }
 
   updateStoryData(oldStory) {
-    // Fallback method when no row is found
-    const index = this.activeQueue.indexOf(oldStory);
-    if (index > -1) {
-      this.activeQueue.splice(index, 1);
-      this.bin.push(oldStory);
-    }
-    this.fillQueue();
-    this.renderBoard();
-  }  animateStatusChange(storyId, newStatus) {
+    // Fallback method when no row is found - just remove to bin
+    this.removeToBin(oldStory);
+  }
+
+  animateStatusChange(storyId, newStatus) {
     const row = document.querySelector(`[data-story-id="${storyId}"]`);
     if (!row) return;
 
@@ -695,7 +595,7 @@ class DepartureBoard {
   fadeOutStory(storyId) {
     const row = document.querySelector(`[data-story-id="${storyId}"]`);
     if (row) {
-      if (typeof gsap !== 'undefined') {
+      if (typeof gsap !== "undefined") {
         gsap.to(row, {
           opacity: 0,
           y: -20,
@@ -703,17 +603,17 @@ class DepartureBoard {
           ease: "power2.in",
           onComplete: () => {
             // Mark for removal after fade completes
-            row.style.visibility = 'hidden';
-          }
+            row.style.visibility = "hidden";
+          },
         });
       } else {
         // CSS fallback
         row.style.transition = "opacity 0.5s ease, transform 0.5s ease";
         row.style.opacity = "0";
         row.style.transform = "translateY(-20px)";
-        
+
         setTimeout(() => {
-          row.style.visibility = 'hidden';
+          row.style.visibility = "hidden";
         }, 500);
       }
     }
@@ -808,16 +708,11 @@ class DepartureBoard {
     this.activeQueue = [];
     this.currentPlayingStory = null;
 
-    // Refill queue and restart
-    this.fillQueue();
-    this.renderBoard();
+    // Refresh the entire dashboard
+    this.refreshDashboard();
   }
 
   destroy() {
-    if (this.selectionTimeout) {
-      clearTimeout(this.selectionTimeout);
-    }
-
     // Stop all playing stories
     this.activeQueue.forEach((story) => story.stop());
 
@@ -852,25 +747,25 @@ class DepartureBoard {
     // Mark story as completed
     story.hasBeenPlayed = true;
     story.isPlaying = false;
-    
+
     // Clear current playing story
     if (this.currentPlayingStory === story) {
       this.currentPlayingStory = null;
     }
-    
+
     // Stop audio if playing
     if (story.audioElement) {
       story.audioElement.pause();
       story.audioElement.currentTime = 0;
     }
-    
+
     // Hide subtitles and show dashboard
     this.hideFullscreenSubtitles();
-    
+
     // Fade out the completed story
     this.fadeOutStory(story.id);
-    
-    // The random timer will handle selecting the next story
+
+    // Story will be moved to bin by processCompletedStories which triggers selection
   }
 
   showFullscreenSubtitles(story) {

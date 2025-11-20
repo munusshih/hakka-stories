@@ -71,7 +71,9 @@ class Story {
   shouldRemove() {
     return (
       this.hasBeenPlayed &&
-      (this.currentStatus === "CANCELED" || !this.audioElement || this.audioFailed)
+      (this.currentStatus === "CANCELED" ||
+        !this.audioElement ||
+        this.audioFailed)
     );
   }
 
@@ -93,7 +95,7 @@ class Story {
         this.audioFailed = true;
         this.currentStatus = "CANCELED";
         const failureEvent = new CustomEvent("storyFailed", {
-          detail: { storyId: this.id, error: error.message }
+          detail: { storyId: this.id, error: error.message },
         });
         document.dispatchEvent(failureEvent);
         this.onAudioEnded();
