@@ -1,10 +1,5 @@
 import { Story } from "./Story.js";
 
-// Initialize GSAP FLIP if available
-if (typeof gsap !== "undefined" && gsap.registerPlugin) {
-  gsap.registerPlugin(Flip);
-}
-
 class DepartureBoard {
   constructor() {
     this.allStories = []; // All original stories
@@ -26,7 +21,28 @@ class DepartureBoard {
     this.createSubtitleContainer();
   }
 
+  initializeGSAP() {
+    // Safely initialize GSAP FLIP if available
+    try {
+      if (
+        typeof window !== "undefined" &&
+        window.gsap &&
+        window.gsap.registerPlugin &&
+        window.Flip
+      ) {
+        window.gsap.registerPlugin(window.Flip);
+        return true;
+      }
+    } catch (error) {
+      console.warn("GSAP Flip plugin could not be initialized:", error);
+    }
+    return false;
+  }
+
   async initialize(storiesData) {
+    // Try to initialize GSAP safely
+    this.initializeGSAP();
+
     // Create Story objects and store as master list
     this.allStories = storiesData.map((data) => new Story(data));
     this.bin = [];
@@ -57,55 +73,6 @@ class DepartureBoard {
     });
   }
 
-  updateStories() {
-    let needsRerender = false;
-
-    // Update all stories in active queue
-    this.activeQueue.forEach((story) => {
-      const oldStatus = story.currentStatus;
-      story.updateStatus();
-      if (oldStatus !== story.currentStatus) {
-        needsRerender = true;
-      }
-    });
-
-    // Proactively mark stories without valid audio as CANCELED
-    this.activeQueue.forEach((story) => {
-      if (story.currentStatus !== "CANCELED") {
-        const hasValidAudio =
-          story.audioFile &&
-          story.audioFile !== "" &&
-          story.audioDuration !== "0:00" &&
-          story.audioDuration !== "0:0" &&
-          story.audioDuration !== "";
-
-        if (!hasValidAudio) {
-          // Use centralized cancel function
-          this.cancelStory(story, 100);
-          needsRerender = true;
-        }
-      }
-    });
-
-    // Enforce only one GATEOPEN story at a time
-    this.enforceGateOpenRule();
-
-    // Try to play next story if none is currently playing
-    if (!this.currentPlayingStory) {
-      this.playNextStory();
-    }
-
-    // Move completed stories to bin and refill queue
-    this.processCompletedStories();
-
-    // Check if all stories are in bin and restart if needed
-    this.checkForRestart();
-
-    if (needsRerender) {
-      this.renderBoard();
-    }
-  }
-
   flickerRow(storyId) {
     const row = document.querySelector(`[data-story-id="${storyId}"]`);
     if (!row) return;
@@ -114,8 +81,8 @@ class DepartureBoard {
     row.classList.add("flickering");
 
     // Use GSAP if available, otherwise CSS
-    if (typeof gsap !== "undefined") {
-      gsap.to(row, {
+    if (typeof window !== "undefined" && window.gsap) {
+      window.gsap.to(row, {
         opacity: 0.2,
         duration: 0.15,
         yoyo: true,
@@ -123,7 +90,7 @@ class DepartureBoard {
         ease: "power2.inOut",
         onComplete: () => {
           row.classList.remove("flickering");
-          gsap.set(row, { opacity: 1 }); // Ensure it ends at full opacity
+          window.gsap.set(row, { opacity: 1 }); // Ensure it ends at full opacity
         },
       });
     } else {
@@ -193,9 +160,9 @@ class DepartureBoard {
     const randomIndex = Math.floor(Math.random() * dashboardStories.length);
     const selectedStory = dashboardStories[randomIndex];
 
-    console.log(
-      `🎯 RANDOMLY SELECTED: Story ${selectedStory.id} - "${selectedStory.title}"`
-    );
+    // console.log(
+    //   `🎯 RANDOMLY SELECTED: Story ${selectedStory.id} - "${selectedStory.title}"`
+    // );
 
     // Add flicker effect to show the row is selected
     this.flickerRow(selectedStory.id);
@@ -270,6 +237,30 @@ class DepartureBoard {
     return container;
   }
 
+  createMarqueeTitle(title, storyIndex = 0) {
+    const container = document.createElement("div");
+    container.className = "marquee-container";
+
+    const displayTitle = title || "UNTITLED";
+
+    // Create a single marquee text with repeated content for seamless scrolling
+    const marqueeText = document.createElement("div");
+    marqueeText.className = "marquee-text";
+
+    const spacer = "\u00A0".repeat(10);
+    const repeatedTitle = `${displayTitle}${spacer}`.repeat(10);
+    marqueeText.textContent = repeatedTitle;
+
+    const randomDuration = 40 + Math.random() * 200;
+    const randomDelay = Math.random() * 1;
+
+    marqueeText.style.setProperty("--marquee-delay", `${randomDelay}s`);
+    marqueeText.style.setProperty("--marquee-duration", `${randomDuration}s`);
+
+    container.appendChild(marqueeText);
+    return container;
+  }
+
   renderBoard() {
     const storiesList = document.querySelector(".stories-list");
     if (!storiesList) return;
@@ -291,7 +282,7 @@ class DepartureBoard {
 
       this.activeQueue.forEach((story, index) => {
         const storyData = story.getDisplayData();
-        const row = this.createStoryRow(storyData);
+        const row = this.createStoryRow(storyData, index);
 
         // Add simple fade-in animation for initial load
         row.style.opacity = "0";
@@ -320,34 +311,16 @@ class DepartureBoard {
       (story) => !this.bin.includes(story) && !this.activeQueue.includes(story)
     );
 
-    console.log(`📊 QUEUE STATUS:`);
-    console.log(
-      `   Active Queue (${this.activeQueue.length}/${this.maxQueueSize}):`,
-      this.activeQueue.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
-    );
-    console.log(`   Available Stories (${availableStories.length}):`);
-    console.log(
-      `   In Bin (${this.bin.length}):`,
-      this.bin.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
-    );
-
-    // If no stories available and bin is full, reset the bin to start over
-    if (availableStories.length === 0 && this.activeQueue.length === 0) {
-      console.log(
-        `🔄 RESETTING: All stories consumed, emptying bin and restarting`
-      );
-      this.bin = [];
-      // Refill with fresh stories, shuffled randomly
-      const freshStories = [...this.allStories]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, this.maxQueueSize);
-      this.activeQueue.push(...freshStories);
-      console.log(
-        `✨ NEW RANDOM QUEUE:`,
-        freshStories.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
-      );
-      return;
-    }
+    // console.log(`📊 QUEUE STATUS:`);
+    // console.log(
+    //   `   Active Queue (${this.activeQueue.length}/${this.maxQueueSize}):`,
+    //   this.activeQueue.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
+    // );
+    // console.log(`   Available Stories (${availableStories.length}):`);
+    // console.log(
+    //   `   In Bin (${this.bin.length}):`,
+    //   this.bin.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
+    // );
 
     const needed = this.maxQueueSize - this.activeQueue.length;
     if (needed > 0) {
@@ -358,10 +331,10 @@ class DepartureBoard {
       const toAdd = shuffledAvailable.slice(0, needed);
 
       this.activeQueue.push(...toAdd);
-      console.log(
-        `➕ ADDED TO QUEUE (${toAdd.length}):`,
-        toAdd.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
-      );
+      // console.log(
+      //   `➕ ADDED TO QUEUE (${toAdd.length}):`,
+      //   toAdd.map((s) => `${s.id}-"${s.title.substring(0, 20)}..."`)
+      // );
     }
   }
 
@@ -389,7 +362,7 @@ class DepartureBoard {
     if (index > -1) {
       this.activeQueue.splice(index, 1);
       this.bin.push(story);
-      console.log(`🗑️ MOVED TO BIN: Story ${story.id} - "${story.title}"`);
+      // console.log(`🗑️ MOVED TO BIN: Story ${story.id} - "${story.title}"`);
     }
 
     // Staggered refresh operations with natural delays
@@ -400,6 +373,8 @@ class DepartureBoard {
     setTimeout(() => {
       this.selectRandomStory();
     }, 8000);
+
+    this.checkForRestart();
   }
 
   cancelStory(story, delay = 3000) {
@@ -414,6 +389,18 @@ class DepartureBoard {
     setTimeout(() => {
       this.removeToBin(story);
     }, delay);
+  }
+
+  revertCancel(story) {
+    // Revert cancellation - reset story to playable state
+    story.currentStatus = "ONTIME";
+    story.hasBeenPlayed = false;
+    story.audioFailed = false;
+
+    // Animate back to ONTIME status
+    this.animateStatusChange(story.id, "ONTIME");
+    // Refresh the dashboard to reflect changes
+    this.renderBoard();
   }
 
   setStoryStatus(story, status) {
@@ -536,8 +523,8 @@ class DepartureBoard {
     });
 
     // Apply FLIP animation only to changed elements
-    if (flipState && typeof Flip !== "undefined") {
-      Flip.from(flipState, {
+    if (flipState && typeof window !== "undefined" && window.Flip) {
+      window.Flip.from(flipState, {
         duration: 0.4,
         ease: "power2.inOut",
         targets: ".story-row",
@@ -595,8 +582,8 @@ class DepartureBoard {
   fadeOutStory(storyId) {
     const row = document.querySelector(`[data-story-id="${storyId}"]`);
     if (row) {
-      if (typeof gsap !== "undefined") {
-        gsap.to(row, {
+      if (typeof window !== "undefined" && window.gsap) {
+        window.gsap.to(row, {
           opacity: 0,
           y: -20,
           duration: 0.5,
@@ -619,7 +606,7 @@ class DepartureBoard {
     }
   }
 
-  createStoryRow(storyData) {
+  createStoryRow(storyData, storyIndex = 0) {
     const row = document.createElement("div");
     row.className = "story-row";
     row.setAttribute("data-story-id", storyData.id);
@@ -634,12 +621,10 @@ class DepartureBoard {
     timeCol.appendChild(this.createCharacterBoxes(storyData.duration, "time"));
     row.appendChild(timeCol);
 
-    // Destination column
+    // Destination column with marquee
     const destCol = document.createElement("div");
     destCol.className = "destination-column";
-    destCol.appendChild(
-      this.createCharacterBoxes(storyData.title, "destination")
-    );
+    destCol.appendChild(this.createMarqueeTitle(storyData.title, storyIndex));
     row.appendChild(destCol);
 
     // ID column
@@ -665,6 +650,16 @@ class DepartureBoard {
       row.classList.add("playing");
     } else {
       row.classList.remove("playing");
+    }
+
+    // Update destination column with new marquee
+    const destCol = row.querySelector(".destination-column");
+    if (destCol) {
+      const storyIndex = this.activeQueue.findIndex(
+        (s) => s.id === storyData.id
+      );
+      destCol.innerHTML = "";
+      destCol.appendChild(this.createMarqueeTitle(storyData.title, storyIndex));
     }
 
     // Don't update status column if it's currently being animated
@@ -693,23 +688,35 @@ class DepartureBoard {
   }
 
   restartExperience() {
-    // Reset all stories
-    this.allStories.forEach((story) => {
-      story.hasBeenPlayed = false;
-      story.isPlaying = false;
-      story.currentStatus = story.mapStatus(story.originalStatus);
-      if (story.audioElement) {
-        story.audioElement.currentTime = 0;
-      }
-    });
+    // console.log("🔄 RESTARTING EXPERIENCE");
 
     // Clear bin and queue
     this.bin = [];
     this.activeQueue = [];
     this.currentPlayingStory = null;
 
-    // Refresh the entire dashboard
-    this.refreshDashboard();
+    // Reset all stories to their initial state
+    this.allStories.forEach((story) => {
+      story.hasBeenPlayed = false;
+      story.isPlaying = false;
+      story.currentStatus = "ONTIME";
+      story.audioFailed = false;
+      if (story.audioElement) {
+        story.audioElement.pause();
+        story.audioElement.currentTime = 0;
+      }
+    });
+
+    // Initialize the queue with fresh stories
+    this.fillQueue();
+
+    // Initial render
+    this.renderBoard();
+
+    // Start the selection cycle after delay
+    setTimeout(() => {
+      this.selectRandomStory();
+    }, 8000);
   }
 
   destroy() {

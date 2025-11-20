@@ -1,7 +1,10 @@
 class Story {
   constructor(data) {
     this.id = data.ID || data.id;
-    this.title = data.Title?.trim() || "UNTITLED";
+    this.fromLocation = data.From?.trim() || "";
+    this.toLocation = data.To?.trim() || "";
+    // Generate title from From and To with <--> format
+    this.title = this.generateTitle(data);
     this.audioDuration = data["Audio Duration"] || "0:00";
     this.audioFile = data["Audio File"];
     this.audioLanguage = data["Audio Language"] || "hakka"; // Default to hakka
@@ -36,6 +39,30 @@ class Story {
   mapStatus(originalStatus) {
     // All stories start as ONTIME regardless of original status
     return "ONTIME";
+  }
+
+  generateTitle(data) {
+    const fromLocation = data.From?.trim() || "";
+    const toLocation = data.To?.trim() || "";
+    const originalTitle = data.Title?.trim() || "";
+
+    // If we have both From and To, use them with <--> format
+    if (fromLocation && toLocation) {
+      return `${fromLocation} <--> ${toLocation}`;
+    }
+
+    // If we only have From, show it as departure
+    if (fromLocation && !toLocation) {
+      return `${fromLocation} <--> UNKNOWN`;
+    }
+
+    // If we only have To, show it as arrival
+    if (!fromLocation && toLocation) {
+      return `UNKNOWN <--> ${toLocation}`;
+    }
+
+    // Fallback to original title or UNTITLED
+    return originalTitle || "UNKNOWN <--> UNKNOWN";
   }
 
   initializeAudio() {

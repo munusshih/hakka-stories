@@ -21,9 +21,26 @@ const storiesData = JSON.parse(
     <title>Hakka Stories - Departure Board</title>
     <link rel="stylesheet" href="/src/styles/dashboard.css" />
     <link rel="stylesheet" href="/src/styles/subtitles.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"
+    <script>
+      // Safe GSAP loading with error handling
+      window.gsapLoadError = false;
+      window.addEventListener("error", function (e) {
+        if (
+          e.filename &&
+          (e.filename.includes("gsap") || e.filename.includes("Flip"))
+        ) {
+          console.warn("GSAP loading error, falling back to CSS animations");
+          window.gsapLoadError = true;
+        }
+      });
+    </script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"
+      onerror="window.gsapLoadError = true; console.warn('GSAP failed to load');"
     ></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Flip.min.js"
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Flip.min.js"
+      onerror="window.flipLoadError = true; console.warn('Flip failed to load');"
     ></script>
   </head>
   <body>
