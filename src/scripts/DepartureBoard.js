@@ -923,16 +923,59 @@ class DepartureBoard {
     }, subtitleDuration * 1000);
   }
 
+  startCountdownTimer(remainingTimeElement, totalDuration) {
+    // Ensure we're working with whole seconds only
+    let timeLeft = Math.floor(totalDuration);
+
+    const updateTimer = () => {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = Math.floor(timeLeft % 60);
+      remainingTimeElement.textContent = `${minutes}:${seconds
+        .toString()
+        .padStart(2, "0")}`;
+
+      if (timeLeft > 0) {
+        timeLeft--;
+        setTimeout(updateTimer, 1000);
+      }
+    };
+
+    // Start the countdown immediately with initial value
+    updateTimer();
+  }
+
   renderSubtitles(config) {
     this.subtitleContainer.innerHTML = "";
 
     const duration = config.duration || 10; // fallback duration
     const subtitleCount = config.subtitles.length;
+    const story = this.currentPlayingStory;
+
+    // Add story info header
+    const storyInfo = document.createElement("div");
+    storyInfo.className = "story-info";
+
+    const storyTitle = document.createElement("div");
+    storyTitle.className = "story-title";
+    storyTitle.textContent = story ? story.title : "UNTITLED";
+
+    const remainingTime = document.createElement("div");
+    remainingTime.className = "remaining-time";
+    remainingTime.textContent = `${Math.floor(duration / 60)}:${(duration % 60)
+      .toString()
+      .padStart(2, "0")}`;
+
+    storyInfo.appendChild(storyTitle);
+    storyInfo.appendChild(remainingTime);
+    this.subtitleContainer.appendChild(storyInfo);
+
+    // Add subtitle content
+    const subtitleContent = document.createElement("div");
+    subtitleContent.className = "subtitle-content";
 
     config.subtitles.forEach((subtitle, index) => {
       const subtitleRow = document.createElement("div");
       subtitleRow.className = "subtitle-marquee " + subtitle.language;
-      subtitleRow.style.height = subtitleCount === 1 ? "50vh" : "30vh";
 
       const marqueeText = document.createElement("div");
       marqueeText.textContent = subtitle.text;
@@ -940,8 +983,13 @@ class DepartureBoard {
       marqueeText.style.display = "inline-block"; // Ensure it's visible for new stories
 
       subtitleRow.appendChild(marqueeText);
-      this.subtitleContainer.appendChild(subtitleRow);
+      subtitleContent.appendChild(subtitleRow);
     });
+
+    this.subtitleContainer.appendChild(subtitleContent);
+
+    // Start countdown timer
+    this.startCountdownTimer(remainingTime, duration);
   }
 }
 
