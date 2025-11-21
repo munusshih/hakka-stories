@@ -1,28 +1,15 @@
 [
   {
-    "id": 1,
-    "ID": "1",
-    "From": "China",
-    "To": "Taiwan",
-    "Status": "Backlog",
-    "Audio File": "",
-    "Audio Language": "English",
-    "Hakka": "",
-    "Mandarin": "我是被外婆帶大的，小時候因為一些原因，從幼稚園到小學的時候一直都是住在客庄和外婆生活在一起。外婆會在放學的時候接我回家，也會在假日的時候教我唱歌。外婆說身為客家人的我們，一定要學會唱的一首歌就是「客家本色」。這首歌的歌詞第一句是這樣唱的：「唐山過台灣，沒半點錢，剎猛打拼耕山耕田，咬薑啜醋幾十年，毋識埋怨」，意思是指我們的祖先當初是從中國沿海一代因為生活過不下去，而偷偷渡船過海峽來到台灣生活的非法移民們。他們們努力的打拼勤儉耐勞很多年都沒有埋怨，我們今天才可以過上沒有像他們一樣辛苦的生活，因此永遠不要忘記我們的祖先是這麼努力的偷渡也要來到這片土地，我們更應該要好好的努力活下去，傳承這樣勤儉持家的客家精神。多年後我跟閩南背景的男朋友聊到這件事情的時候，我才知道說只有客家人才會跟他們的小孩用唱歌的方式說這些偷渡先祖的故事，閩南人是沒有這樣的一首歌的。",
-    "English": "I was raised by my grandmother. When I was little, for various reasons, I lived with her in a Hakka village from kindergarten through elementary school. She would pick me up from school and, on weekends, teach me how to sing. She always said that as Hakka people, there was one song we should all learn: “Hakka Spirit.” The first line of the song goes something like: \"唐山過台灣，沒半點錢，剎猛打拼耕山耕田，咬薑啜醋幾十年，毋識埋怨\" \n\nThe song tells the story of our ancestors, who came from the coastal regions of China. Life there was extremely difficult, so they secretly braved the dangerous seas to Taiwan. They worked tirelessly, lived frugally, and endured decades of hardships without complaint. Because of their efforts, we are able to live a life far easier than theirs. My grandmother would always remind me not to forget their struggles—and to live with purpose, carrying the Hakka spirit of diligence, resilience, and simplicity.\n\nYears later, when I told my boyfriend—who is also Taiwanese, but a difficult ethnicity, Minnan, not Hakka—about this, I realized something: only Hakka families pass down these ancestral stories through song. Minnan families don’t have a song like this.",
-    "Audio Duration": "0:00"
-  },
-  {
-    "id": 2,
-    "ID": "2",
+    "id": 19,
+    "ID": "19",
     "From": "",
     "To": "",
     "Status": "Backlog",
-    "Audio File": "/audio/story_2_audio.mp3",
-    "Audio Language": "Mandarin",
+    "Audio File": "/audio/story_19_audio.mp3",
+    "Audio Language": "Hakka",
     "Hakka": "",
-    "Mandarin": "身為客家人可能都對所謂的客家花布有一個印象，那是一種通常上面有著大量花卉圖示裝飾的圖騰布，通常會用來包食物、戴在身上或者包在斗笠上面，作為裝飾用途。我在離開客庄之前從來沒有聽過客家花布這個說法，畢竟對在客庄長大的我來說，身邊都是客家人，我並沒有特別分哪一些是客家哪一些不是客家的東西。我一直到後來在大學開始閱讀後殖民主義的時候，才找到研究說客家花布其實並不是客家人所有的特殊圖騰。客家花布在台灣是大約100年前日本殖民時期刻意發展台灣紡織業的產品，當時不管是台灣的閩南人、原住民或外省人全都使用過這樣的布料。只是後來在第二次世界大戰的結束，中華民國政府接管台灣後執行的去日本化、中國化改造的運動，讓這些花布的樣式趨於統一，因為價格低廉、顏色俗艷而被視為一種廉價的通俗文化。但客家人，秉持著節儉持家的精神，在其他文化都逐漸淘汰這些花布的狀況下，決定持續生產與製造這些花布，隨著台灣本土化運動的興起，才逐漸成為一種台灣客家人的象徵。",
-    "English": "As Hakka people, many of us probably have an idea of what a “Hakka floral fabric” looks like—a bright cloth covered with dense, colorful flowers. You’d see it used to wrap food, worn on the body, or even tied over a straw hat as decoration. But before I left the Hakka villages, I’d never actually heard anyone refer to it as the “Hakka floral fabric”. Growing up surrounded by Hakka people, I didn’t really think about what was “Hakka” and what wasn’t—it was just part of everyday life. It wasn’t until I got to university and started reading about postcolonial studies that I realized something interesting: these floral patterns weren’t originally a unique Hakka symbol at all.\n\nIn Taiwan, these fabrics were actually developed about a hundred years ago, during the Japanese colonialization, as part of an effort to grow the local textile industry. Back then, it wasn’t just Hakka people using them—Minnan people, Indigenous people, and even other mainland Chinese immigrants all used the same fabrics. Later, after World War II, when the Republic of China took over Taiwan and pushed for de-Japanization and Sinicization, the patterns became more standardized. Because they were cheap and brightly colored, they were often dismissed as a kind of lowbrow, popular culture.\nBut the Hakka, holding onto our values of frugality and careful household management, kept producing and using these fabrics, even as other communities stopped. Over time, and especially with the rise of Taiwan’s localization movement, these floral fabrics slowly became a symbol of Taiwanese Hakka identity.",
-    "Audio Duration": "3:27"
+    "Mandarin": "通常朋友聽到我是客家人，就會開始聯想到刻板印象比如節儉、勤奮等，比如從小就被教育碗裡的東西要吃乾淨，不能浪費水浪費電，但離開台灣後就比較少人知道這些了。到紐約時除了食物以外，沒有再有意識的接觸客家相關的東西，我覺得我正在融入一個新的文化，而客家這個身份離我變得遙遠，像是在老相簿偶然翻到會想起來的我的一部分。直到在一個活動上偶然遇到同鄉人才討論起客家的事，從來沒有想過人在異鄉，「客家」會成為聯繫我們的關鍵字，而這個久未聽到，卻深植在我靈魂的身份，意外地喚醒了我對於自己身份的好奇與重新探索。\n",
+    "English": "When friends learn that I’m Hakka, they often bring up the usual stereotypes—thriftiness, hard work, and frugality. I did grow up being told to finish every grain of rice in my bowl and to never waste water or electricity. But after leaving Taiwan, I found that few people outside the country knew about any of this.\nWhen I moved to New York, apart from food, I rarely encountered anything related to Hakka culture. I felt myself blending into a new world, while my Hakka identity began to fade into the background, like an old photograph tucked away in an album, something I’d only recall once in a while.\nThen one day, at a community event, I met another Hakka by chance. We started talking, and it struck me how this word, Hakka, became an instant bridge between two strangers in a foreign place. Hearing it again, after so long, stirred something deep inside me. It reignited a quiet curiosity about who I am, and what it really means to carry this identity across distance and time.",
+    "Audio Duration": "2:15"
   }
 ]

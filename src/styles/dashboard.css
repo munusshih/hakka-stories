@@ -5,6 +5,16 @@
     src: url('/PegHolesRegular-L3lWg.ttf') format('truetype');
 }
 
+@font-face {
+    font-family: 'VCR_OSD_MONO';
+    src: url('/VCR_OSD_MONO_1.001.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'Cubic_11';
+    src: url('/Cubic_11.ttf') format('truetype');
+}
+
 * {
     margin: 0;
     padding: 0;

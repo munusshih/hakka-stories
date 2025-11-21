@@ -1,4 +1,5 @@
 import { Story } from "./Story.js";
+import { cipher } from "./cipher.js";
 
 class DepartureBoard {
   constructor() {
@@ -16,6 +17,9 @@ class DepartureBoard {
       id: 30,
       status: 20,
     };
+
+    // Initialize cipher codes map
+    this.cipherCodes = new Map();
 
     this.setupEventListeners();
     this.createSubtitleContainer();
@@ -47,6 +51,9 @@ class DepartureBoard {
     this.allStories = storiesData.map((data) => new Story(data));
     this.bin = [];
 
+    // Generate cipher codes for all stories
+    this.generateCipherCodes();
+
     // Initialize the queue
     this.fillQueue();
 
@@ -58,12 +65,36 @@ class DepartureBoard {
     }, 8000);
   }
 
-  setupEventListeners() {
-    // Listen for story events
-    document.addEventListener("storyEnded", (event) => {
-      this.onStoryEnded(event.detail.storyId);
+  generateCipherCodes() {
+    // Generate unique cipher codes for all story IDs
+    this.allStories.forEach((story) => {
+      const cipherCode = cipher.encode(story.id);
+      this.cipherCodes.set(story.id, cipherCode);
+      // console.log(`Story ${story.id} -> Flight ${cipherCode}`);
     });
 
+    // Verify uniqueness and log results
+    const storyIds = this.allStories.map((s) => s.id);
+    const verification = cipher.verifyUniqueness(storyIds);
+
+    if (!verification.unique) {
+      // console.warn(
+      //   "⚠️  Cipher code collisions detected:",
+      //   verification.duplicates
+      // );
+    } else {
+      // console.log(
+      //   `✅ Generated ${verification.totalCodes} unique flight codes`
+      // );
+    }
+  }
+
+  getCipherCode(storyId) {
+    return this.cipherCodes.get(storyId) || cipher.encode(storyId);
+  }
+
+  setupEventListeners() {
+    // Listen for story events
     document.addEventListener("storyStatusChanged", (event) => {
       this.updateStoryDisplay(event.detail.storyId);
     });
@@ -201,12 +232,6 @@ class DepartureBoard {
     }
   }
 
-  onStoryEnded(storyId) {
-    const story = this.activeQueue.find((s) => s.id == storyId);
-    if (story) {
-      this.endStory(story);
-    }
-  }
   updateStoryDisplay(storyId) {
     this.renderBoard();
   }
@@ -508,9 +533,8 @@ class DepartureBoard {
           }
           if (idCol) {
             idCol.innerHTML = "";
-            idCol.appendChild(
-              this.createCharacterBoxes(newStoryData.id.toString(), "id")
-            );
+            const cipherCode = this.getCipherCode(newStoryData.id);
+            idCol.appendChild(this.createCharacterBoxes(cipherCode, "id"));
           }
           if (statusCol) {
             statusCol.innerHTML = "";
@@ -630,7 +654,8 @@ class DepartureBoard {
     // ID column
     const idCol = document.createElement("div");
     idCol.className = "id-column";
-    idCol.appendChild(this.createCharacterBoxes(storyData.id.toString(), "id"));
+    const cipherCode = this.getCipherCode(storyData.id);
+    idCol.appendChild(this.createCharacterBoxes(cipherCode, "id"));
     row.appendChild(idCol);
 
     // Status column
@@ -750,6 +775,40 @@ class DepartureBoard {
     document.body.appendChild(this.subtitleContainer);
   }
 
+  // Simple dashboard visibility
+  showDashboard() {
+    const dashboard = document.querySelector(".departure-board");
+    if (dashboard) {
+      dashboard.style.opacity = "1";
+    }
+    // Re-trigger fade-in animations for story rows
+    setTimeout(() => {
+      this.renderBoard();
+    }, 100);
+  }
+
+  hideDashboard() {
+    const dashboard = document.querySelector(".departure-board");
+    if (dashboard) {
+      dashboard.style.opacity = "0";
+    }
+  }
+
+  // Simple subtitle visibility
+  showSubtitles() {
+    this.subtitleContainer.style.visibility = "visible";
+    this.subtitleContainer.style.opacity = "1";
+  }
+
+  hideSubtitles() {
+    this.subtitleContainer.style.opacity = "0";
+    setTimeout(() => {
+      this.subtitleContainer.style.visibility = "hidden";
+      this.subtitleContainer.innerHTML = "";
+      this.isShowingSubtitles = false;
+    }, 500);
+  }
+
   endStory(story) {
     // Mark story as completed
     story.hasBeenPlayed = true;
@@ -760,19 +819,36 @@ class DepartureBoard {
       this.currentPlayingStory = null;
     }
 
-    // Stop audio if playing
+    // Clean up audio
     if (story.audioElement) {
       story.audioElement.pause();
       story.audioElement.currentTime = 0;
     }
 
     // Hide subtitles and show dashboard
-    this.hideFullscreenSubtitles();
+    this.hideSubtitles();
+    this.showDashboard();
 
     // Fade out the completed story
     this.fadeOutStory(story.id);
 
     // Story will be moved to bin by processCompletedStories which triggers selection
+    this.processCompletedStories();
+  }
+
+  completeStoryPlayback(story) {
+    // Clear subtitle text immediately but keep black background
+    const marqueeElements = this.subtitleContainer.querySelectorAll(
+      ".subtitle-marquee div"
+    );
+    marqueeElements.forEach((element) => {
+      element.style.display = "none";
+    });
+
+    // Wait 5 seconds then end story and transition back to dashboard
+    setTimeout(() => {
+      this.endStory(story);
+    }, 5000);
   }
 
   showFullscreenSubtitles(story) {
@@ -780,63 +856,71 @@ class DepartureBoard {
 
     const config = story.getSubtitleConfiguration();
     if (config.subtitles.length === 0) {
-      // No subtitles, end story immediately
-      this.endStory(story);
+      // No subtitles, wait 5 seconds then end story
+      setTimeout(() => {
+        this.endStory(story);
+      }, 5000);
       return;
     }
 
-    // Fade out dashboard first
-    const dashboard = document.querySelector(".departure-board");
-    if (dashboard) {
-      dashboard.style.transition = "opacity 0.5s ease";
-      dashboard.style.opacity = "0";
-    }
+    // Hide dashboard and show subtitles
+    this.hideDashboard();
 
-    // Wait 2 seconds then show subtitles
     setTimeout(() => {
       this.isShowingSubtitles = true;
       this.renderSubtitles(config);
-
-      // Try to start audio (but don't depend on it succeeding)
-      if (story && story.startAudio) {
-        story.startAudio();
-      }
-
-      // Fade in subtitles
-      this.subtitleContainer.style.visibility = "visible";
-      this.subtitleContainer.style.opacity = "1";
-
-      // End story after subtitle duration (default 10 seconds)
-      const duration = config.duration || 10;
-      setTimeout(() => {
-        this.endStory(story);
-      }, duration * 1000);
+      this.showSubtitles();
+      this.setupStoryCompletionTracking(story, config);
     }, 2000);
   }
 
-  hideFullscreenSubtitles() {
-    if (!this.isShowingSubtitles) return;
+  setupStoryCompletionTracking(story, config) {
+    // Track completion states
+    let audioCompleted = false;
+    let subtitlesCompleted = false;
 
-    // Fade out subtitles
-    this.subtitleContainer.style.opacity = "0";
-
-    setTimeout(() => {
-      this.subtitleContainer.style.visibility = "hidden";
-      this.subtitleContainer.innerHTML = "";
-      this.isShowingSubtitles = false;
-
-      // Fade in dashboard with animation
-      const dashboard = document.querySelector(".departure-board");
-      if (dashboard) {
-        dashboard.style.transition = "opacity 0.5s ease";
-        dashboard.style.opacity = "1";
-
-        // Re-trigger fade-in animations for story rows
-        setTimeout(() => {
-          this.renderBoard();
-        }, 100);
+    // Function to check if we can end the story
+    const checkForStoryEnd = () => {
+      if (audioCompleted && subtitlesCompleted) {
+        this.completeStoryPlayback(story);
       }
-    }, 500);
+    };
+
+    // Start audio
+    if (story && story.startAudio) {
+      story.startAudio();
+    }
+
+    // Set up audio completion tracking
+    const subtitleDuration = config.duration || 10;
+    const audioDuration = story.audioElement ? story.audioElement.duration : 0;
+
+    if (story.audioElement && audioDuration > 0) {
+      // Listen for audio end event
+      const handleAudioEnd = () => {
+        audioCompleted = true;
+        story.audioElement.removeEventListener("ended", handleAudioEnd);
+        checkForStoryEnd();
+      };
+      story.audioElement.addEventListener("ended", handleAudioEnd);
+
+      // Fallback timeout in case audio doesn't fire 'ended' event
+      setTimeout(() => {
+        if (!audioCompleted) {
+          audioCompleted = true;
+          checkForStoryEnd();
+        }
+      }, audioDuration * 1000 + 1000);
+    } else {
+      // No valid audio, mark as completed immediately
+      audioCompleted = true;
+    }
+
+    // Set up subtitle completion tracking
+    setTimeout(() => {
+      subtitlesCompleted = true;
+      checkForStoryEnd();
+    }, subtitleDuration * 1000);
   }
 
   renderSubtitles(config) {
@@ -852,7 +936,8 @@ class DepartureBoard {
 
       const marqueeText = document.createElement("div");
       marqueeText.textContent = subtitle.text;
-      marqueeText.style.animation = "marquee " + duration + "s linear infinite";
+      marqueeText.style.animation = "marquee " + duration + "s linear 1";
+      marqueeText.style.display = "inline-block"; // Ensure it's visible for new stories
 
       subtitleRow.appendChild(marqueeText);
       this.subtitleContainer.appendChild(subtitleRow);

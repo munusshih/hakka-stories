@@ -116,17 +116,38 @@ class Story {
 
   startAudio() {
     if (this.audioElement && this.isPlaying) {
-      this.audioElement.play().catch((error) => {
-        console.error("Error playing audio:", error);
-        // Mark as failed and dispatch failure event
-        this.audioFailed = true;
-        this.currentStatus = "CANCELED";
-        const failureEvent = new CustomEvent("storyFailed", {
-          detail: { storyId: this.id, error: error.message },
-        });
-        document.dispatchEvent(failureEvent);
-        this.onAudioEnded();
-      });
+      // Attempt to play audio with better error handling
+      const playPromise = this.audioElement.play();
+
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            // Audio started successfully
+            // console.log(`Audio playing for story ${this.id}`);
+          })
+          .catch((error) => {
+            console.warn("Audio autoplay blocked:", error.message);
+
+            // If it's an autoplay error, don't fail the story
+            if (error.name === "NotAllowedError") {
+              console.log(
+                "User interaction required for audio - story will continue without audio"
+              );
+              // Continue story without audio rather than failing
+              return;
+            }
+
+            // For other audio errors, mark as failed
+            console.error("Error playing audio:", error);
+            this.audioFailed = true;
+            this.currentStatus = "CANCELED";
+            const failureEvent = new CustomEvent("storyFailed", {
+              detail: { storyId: this.id, error: error.message },
+            });
+            document.dispatchEvent(failureEvent);
+            this.onAudioEnded();
+          });
+      }
     }
   }
 
