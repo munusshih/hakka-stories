@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { parseFile } from "music-metadata";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,22 +52,29 @@ function convertGoogleDriveURL(url) {
 
 async function getAudioDuration(filePath) {
   try {
-    // Read first few bytes to check if it's a valid MP3
-    const buffer = fs.readFileSync(filePath);
+    // Use music-metadata to get accurate duration
+    const metadata = await parseFile(filePath);
 
-    // Simple MP3 duration estimation based on file size and typical bitrate
-    // This is approximate but works without external dependencies
-    const fileSizeBytes = buffer.length;
-    const averageBitrate = 128; // Assume 128 kbps average
-    const durationSeconds = (fileSizeBytes * 8) / (averageBitrate * 1000);
+    if (metadata.format.duration) {
+      const durationSeconds = Math.floor(metadata.format.duration);
+      const minutes = Math.floor(durationSeconds / 60);
+      const seconds = durationSeconds % 60;
 
-    const minutes = Math.floor(durationSeconds / 60);
-    const seconds = Math.floor(durationSeconds % 60);
+      console.log(
+        `  Actual duration: ${durationSeconds}s (${minutes}:${seconds
+          .toString()
+          .padStart(2, "0")})`
+      );
+      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    }
 
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    return "0:00";
   } catch (error) {
-    console.error(`Error getting duration for ${filePath}:`, error);
-    return "--:--";
+    console.error(
+      `  Error reading audio metadata for ${filePath}:`,
+      error.message
+    );
+    return "0:00";
   }
 }
 
@@ -113,6 +121,7 @@ async function processAudioFiles(data) {
     for (const [key, value] of Object.entries(row)) {
       if (
         typeof value === "string" &&
+        value.trim() !== "" && // Skip empty strings
         (value.includes(".mp3") ||
           value.includes(".wav") ||
           value.includes(".m4a") ||
@@ -138,6 +147,9 @@ async function processAudioFiles(data) {
         const audioInfo = await downloadMP3(value, filename);
         processedRow[key] = audioInfo.localPath;
         processedRow["Audio Duration"] = audioInfo.duration;
+        console.log(
+          `Story ${row.ID}: Downloaded ${filename}, Duration: ${audioInfo.duration}`
+        );
       }
     }
 

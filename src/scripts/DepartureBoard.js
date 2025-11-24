@@ -21,6 +21,9 @@ class DepartureBoard {
     // Initialize cipher codes map
     this.cipherCodes = new Map();
 
+    // Track last two languages used for rotation
+    this.languageHistory = [];
+
     this.setupEventListeners();
     this.createSubtitleContainer();
   }
@@ -187,9 +190,44 @@ class DepartureBoard {
       return;
     }
 
-    // Randomly select a story from the dashboard
-    const randomIndex = Math.floor(Math.random() * dashboardStories.length);
-    const selectedStory = dashboardStories[randomIndex];
+    // Get available languages and filter out last two used
+    const availableLanguages = ["English", "Mandarin", "Hakka"];
+    const selectableLanguages = availableLanguages.filter(
+      (lang) => !this.languageHistory.includes(lang)
+    );
+
+    // If all languages were used recently, reset history
+    const languagePool =
+      selectableLanguages.length > 0 ? selectableLanguages : availableLanguages;
+
+    // Randomly select a language from available pool
+    const selectedLanguage =
+      languagePool[Math.floor(Math.random() * languagePool.length)];
+
+    // Filter stories that have audio in the selected language
+    const storiesWithLanguage = dashboardStories.filter((story) => {
+      return story.audioLanguage === selectedLanguage;
+    });
+
+    // If no stories with selected language, pick any available story
+    const candidateStories =
+      storiesWithLanguage.length > 0 ? storiesWithLanguage : dashboardStories;
+
+    // Randomly select a story from candidates
+    const randomIndex = Math.floor(Math.random() * candidateStories.length);
+    const selectedStory = candidateStories[randomIndex];
+
+    // Update language history (keep only last 2)
+    this.languageHistory.push(selectedLanguage);
+    if (this.languageHistory.length > 2) {
+      this.languageHistory.shift();
+    }
+
+    console.log(
+      `Selected language: ${selectedLanguage}, History: [${this.languageHistory.join(
+        ", "
+      )}]`
+    );
 
     // console.log(
     //   `🎯 RANDOMLY SELECTED: Story ${selectedStory.id} - "${selectedStory.title}"`
@@ -201,10 +239,12 @@ class DepartureBoard {
     // Check if story has valid audio
     const hasValidAudio =
       selectedStory.audioFile &&
-      selectedStory.audioFile !== "" &&
+      selectedStory.audioFile.trim() !== "" &&
+      selectedStory.audioFile.startsWith("/audio/") &&
+      selectedStory.audioDuration &&
       selectedStory.audioDuration !== "0:00" &&
       selectedStory.audioDuration !== "0:0" &&
-      selectedStory.audioDuration !== "";
+      selectedStory.audioDuration.trim() !== "";
 
     if (!hasValidAudio) {
       // Use centralized cancel function with random delay
@@ -719,6 +759,7 @@ class DepartureBoard {
     this.bin = [];
     this.activeQueue = [];
     this.currentPlayingStory = null;
+    this.languageHistory = [];
 
     // Reset all stories to their initial state
     this.allStories.forEach((story) => {

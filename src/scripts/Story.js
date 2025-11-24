@@ -115,7 +115,23 @@ class Story {
   }
 
   startAudio() {
-    if (this.audioElement && this.isPlaying) {
+    // Check if audio element exists and has valid sources before attempting to play
+    if (!this.audioElement) {
+      console.warn(
+        `Story ${this.id}: No audio element - continuing without audio`
+      );
+      return;
+    }
+
+    // Check if audio element has valid sources
+    if (this.audioElement.readyState === 0 || this.audioElement.error) {
+      console.warn(
+        `Story ${this.id}: Invalid audio source - continuing without audio`
+      );
+      return;
+    }
+
+    if (this.isPlaying) {
       // Attempt to play audio with better error handling
       const playPromise = this.audioElement.play();
 
@@ -123,29 +139,28 @@ class Story {
         playPromise
           .then(() => {
             // Audio started successfully
-            // console.log(`Audio playing for story ${this.id}`);
+            console.log(`Story ${this.id}: Audio playing`);
           })
           .catch((error) => {
-            console.warn("Audio autoplay blocked:", error.message);
-
-            // If it's an autoplay error, don't fail the story
+            // Handle different error types
             if (error.name === "NotAllowedError") {
               console.log(
-                "User interaction required for audio - story will continue without audio"
+                `Story ${this.id}: User interaction required - continuing without audio`
               );
-              // Continue story without audio rather than failing
               return;
             }
 
-            // For other audio errors, mark as failed
-            console.error("Error playing audio:", error);
-            this.audioFailed = true;
-            this.currentStatus = "CANCELED";
-            const failureEvent = new CustomEvent("storyFailed", {
-              detail: { storyId: this.id, error: error.message },
-            });
-            document.dispatchEvent(failureEvent);
-            this.onAudioEnded();
+            if (error.name === "NotSupportedError") {
+              console.warn(
+                `Story ${this.id}: Audio format not supported - continuing without audio`
+              );
+              return;
+            }
+
+            // For unexpected errors, just log and continue without audio
+            console.warn(
+              `Story ${this.id}: Audio playback failed (${error.name}) - continuing without audio`
+            );
           });
       }
     }
