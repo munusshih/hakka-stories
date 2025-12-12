@@ -25,7 +25,7 @@ class Story {
     this.audioElement = null;
 
     // Initialize if has audio
-    if (this.audioFile && this.audioFile.startsWith("/audio/")) {
+    if (this.audioFile && (this.audioFile.startsWith("/audio/") || this.audioFile.startsWith("./audio/"))) {
       this.initializeAudio();
     }
 

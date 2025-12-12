@@ -34,9 +34,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.addEventListener("click", unlockAudio, { once: true });
     document.addEventListener("keydown", unlockAudio, { once: true });
 
-    // Fetch stories data
-    const response = await fetch("/src/data/stories.json");
-    const storiesData = await response.json();
+    // Get stories data from server (injected into window)
+    const storiesData = window.__STORIES_DATA__ || [];
 
     // Initialize departure board
     const board = new DepartureBoard();

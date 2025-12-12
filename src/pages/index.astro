@@ -4,23 +4,63 @@ import fs from "fs";
 import path from "path";
 
 // Read the stories data
-const storiesData = JSON.parse(
+const rawStoriesData = JSON.parse(
   fs.readFileSync(
     path.join(process.cwd(), "src", "data", "stories.json"),
     "utf-8"
   )
 );
+
+// Convert absolute audio paths to relative paths
+const storiesData = rawStoriesData.map(story => ({
+  ...story,
+  "Audio File": story["Audio File"]?.startsWith("/audio/") 
+    ? "." + story["Audio File"] 
+    : story["Audio File"]
+}));
+
+// Read CSS files
+const dashboardCSS = fs.readFileSync(
+  path.join(process.cwd(), "src", "styles", "dashboard.css"),
+  "utf-8"
+);
+const subtitlesCSS = fs.readFileSync(
+  path.join(process.cwd(), "src", "styles", "subtitles.css"),
+  "utf-8"
+);
+
+// Read script files
+const cipherJS = fs
+  .readFileSync(
+    path.join(process.cwd(), "src", "scripts", "cipher.js"),
+    "utf-8"
+  )
+  .replace(/^import .*/gm, "")
+  .replace(/^export .*/gm, "");
+
+const storyJS = fs
+  .readFileSync(path.join(process.cwd(), "src", "scripts", "Story.js"), "utf-8")
+  .replace(/^import .*/gm, "")
+  .replace(/^export .*/gm, "");
+
+const departureBoardJS = fs
+  .readFileSync(
+    path.join(process.cwd(), "src", "scripts", "DepartureBoard.js"),
+    "utf-8"
+  )
+  .replace(/^import .*/gm, "")
+  .replace(/^export .*/gm, "");
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <title>Hakka Stories - Departure Board</title>
-    <link rel="stylesheet" href="/src/styles/dashboard.css" />
-    <link rel="stylesheet" href="/src/styles/subtitles.css" />
+    <style set:html={dashboardCSS}></style>
+    <style set:html={subtitlesCSS}></style>
     <script>
       // Safe GSAP loading with error handling
       window.gsapLoadError = false;
@@ -61,6 +101,43 @@ const storiesData = JSON.parse(
       </div>
     </div>
 
-    <script type="module" src="/src/scripts/main.js"></script>
+    <script is:inline set:html={cipherJS} />
+    <script is:inline set:html={storyJS} />
+    <script is:inline set:html={departureBoardJS} />
+    <script define:vars={{ storiesData }}>
+      window.__STORIES_DATA__ = storiesData;
+
+      // Audio context management for browser autoplay policy
+      let audioUnlocked = false;
+      function unlockAudio() {
+        if (audioUnlocked) return;
+        const audioContext = new (
+          window.AudioContext || window.webkitAudioContext
+        )();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        gainNode.gain.value = 0;
+        oscillator.start();
+        oscillator.stop();
+        audioUnlocked = true;
+        document.removeEventListener("click", unlockAudio);
+        document.removeEventListener("keydown", unlockAudio);
+        console.log("Audio unlocked - ready for playback");
+      }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          document.addEventListener("click", unlockAudio, { once: true });
+          document.addEventListener("keydown", unlockAudio, { once: true });
+          const board = new DepartureBoard();
+          await board.initialize(storiesData);
+          window.departureBoard = board;
+        } catch (error) {
+          console.error("Error initializing departure board:", error);
+        }
+      });
+    </script>
   </body>
 </html>
