@@ -3,6 +3,8 @@ class Story {
     this.id = data.ID || data.id;
     this.fromLocation = data.From?.trim() || "";
     this.toLocation = data.To?.trim() || "";
+    this.fromLocationChinese = data.FromChinese?.trim() || "";
+    this.toLocationChinese = data.ToChinese?.trim() || "";
     // Generate title from From and To with <--> format
     this.title = this.generateTitle(data);
     this.audioDuration = data["Audio Duration"] || "0:00";
@@ -143,14 +145,10 @@ class Story {
         playPromise
           .then(() => {
             // Audio started successfully
-            console.log(`Story ${this.id}: Audio playing`);
           })
           .catch((error) => {
             // Handle different error types
             if (error.name === "NotAllowedError") {
-              console.log(
-                `Story ${this.id}: User interaction required - continuing without audio`
-              );
               return;
             }
 

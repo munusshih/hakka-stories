@@ -28,6 +28,10 @@ const subtitlesCSS = fs.readFileSync(
   path.join(process.cwd(), "src", "styles", "subtitles.css"),
   "utf-8"
 );
+const carouselCSS = fs.readFileSync(
+  path.join(process.cwd(), "src", "styles", "carousel.css"),
+  "utf-8"
+);
 
 // Read script files
 const cipherJS = fs
@@ -61,6 +65,7 @@ const departureBoardJS = fs
     <title>Hakka Stories - Departure Board</title>
     <style set:html={dashboardCSS}></style>
     <style set:html={subtitlesCSS}></style>
+    <style set:html={carouselCSS}></style>
     <script>
       // Safe GSAP loading with error handling
       window.gsapLoadError = false;
@@ -84,6 +89,25 @@ const departureBoardJS = fs
     ></script>
   </head>
   <body>
+    <!-- Audio Unlock Popup -->
+    <div id="audio-unlock-popup" class="audio-unlock-popup">
+      <div class="popup-content">
+        <h2>🎧 ENABLE AUDIO</h2>
+        <p>Click to unlock audio and start the experience</p>
+        <button id="audio-unlock-btn" class="popup-button"
+          >CLICK TO BEGIN</button
+        >
+      </div>
+    </div>
+
+    <!-- Idle Screen -->
+    <div id="idle-screen" class="idle-screen">
+      <div class="idle-content">
+        <p>CLOSED</p>
+        <p>Experience will resume at 8:00 AM</p>
+      </div>
+    </div>
+
     <div class="departure-board">
       <header class="board-header">
         <h1>GUEST STOP (IN TRANSIT)</h1>
@@ -101,6 +125,63 @@ const departureBoardJS = fs
       </div>
     </div>
 
+    <!-- Carousel Templates -->
+    <template id="carousel-mode-1">
+      <div class="carousel-grid carousel-mode-1">
+        <div class="carousel-screen carousel-left">
+          <div class="carousel-label">FROM</div>
+          <div class="carousel-text" data-field="fromLocation"></div>
+          <div class="carousel-text-chinese" data-field="fromLocationChinese">
+          </div>
+        </div>
+        <div class="carousel-screen carousel-center">
+          <div class="carousel-arrow"><--></div>
+        </div>
+        <div class="carousel-screen carousel-right">
+          <div class="carousel-label">TO</div>
+          <div class="carousel-text" data-field="toLocation"></div>
+          <div class="carousel-text-chinese" data-field="toLocationChinese">
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template id="carousel-mode-2">
+      <div class="carousel-grid carousel-mode-2">
+        <div class="carousel-screen carousel-left"></div>
+        <div class="carousel-screen carousel-center">
+          <!-- <div class="carousel-label">FROM</div> -->
+          <div class="carousel-text" data-field="fromLocation"></div>
+          <div class="carousel-text-chinese" data-field="fromLocationChinese">
+          </div>
+          <div class="carousel-arrow"><--></div>
+          <!-- <div class="carousel-label">TO</div> -->
+          <div class="carousel-text" data-field="toLocation"></div>
+          <div class="carousel-text-chinese" data-field="toLocationChinese">
+          </div>
+        </div>
+        <div class="carousel-screen carousel-right"></div>
+      </div>
+    </template>
+
+    <template id="carousel-mode-3">
+      <div class="carousel-grid carousel-mode-3">
+        <div class="carousel-screen carousel-left">
+          <div class="carousel-label">FROM</div>
+          <div class="carousel-text" data-field="fromLocation"></div>
+          <div class="carousel-text-chinese" data-field="fromLocationChinese">
+          </div>
+        </div>
+        <div class="carousel-screen carousel-center">
+          <div class="carousel-label">TO</div>
+          <div class="carousel-text" data-field="toLocation"></div>
+          <div class="carousel-text-chinese" data-field="toLocationChinese">
+          </div>
+        </div>
+        <div class="carousel-screen carousel-right"></div>
+      </div>
+    </template>
+
     <script is:inline set:html={cipherJS} />
     <script is:inline set:html={storyJS} />
     <script is:inline set:html={departureBoardJS} />
@@ -109,6 +190,8 @@ const departureBoardJS = fs
 
       // Audio context management for browser autoplay policy
       let audioUnlocked = false;
+      let experienceInitialized = false;
+
       function unlockAudio() {
         if (audioUnlocked) return;
         const audioContext = new (
@@ -122,21 +205,44 @@ const departureBoardJS = fs
         oscillator.start();
         oscillator.stop();
         audioUnlocked = true;
-        document.removeEventListener("click", unlockAudio);
-        document.removeEventListener("keydown", unlockAudio);
         console.log("Audio unlocked - ready for playback");
       }
 
-      document.addEventListener("DOMContentLoaded", async () => {
+      function dismissAudioPopup() {
+        const popup = document.getElementById("audio-unlock-popup");
+        if (popup) {
+          popup.classList.add("hidden");
+        }
+        unlockAudio();
+
+        // Initialize experience after popup is dismissed
+        if (!experienceInitialized) {
+          initializeExperience();
+        }
+      }
+
+      async function initializeExperience() {
+        if (experienceInitialized) return;
+        experienceInitialized = true;
+
         try {
-          document.addEventListener("click", unlockAudio, { once: true });
-          document.addEventListener("keydown", unlockAudio, { once: true });
           const board = new DepartureBoard();
           await board.initialize(storiesData);
           window.departureBoard = board;
         } catch (error) {
           console.error("Error initializing departure board:", error);
         }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Set up popup button handler
+        const unlockBtn = document.getElementById("audio-unlock-btn");
+        if (unlockBtn) {
+          unlockBtn.addEventListener("click", dismissAudioPopup);
+        }
+
+        // Also allow pressing any key or clicking anywhere to dismiss
+        document.addEventListener("keydown", dismissAudioPopup, { once: true });
       });
     </script>
   </body>

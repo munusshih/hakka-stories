@@ -23,8 +23,6 @@ function unlockAudio() {
   // Remove the click listener after first interaction
   document.removeEventListener("click", unlockAudio);
   document.removeEventListener("keydown", unlockAudio);
-
-  console.log("Audio unlocked - ready for playback");
 }
 
 // Initialize departure board when DOM is loaded

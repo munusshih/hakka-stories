@@ -11,6 +11,9 @@ class DepartureBoard {
     this.maxQueueSize = 5;
     this.isShowingSubtitles = false;
     this.subtitleContainer = null;
+    this.carouselContainer = null;
+    this.isShowingCarousel = false;
+    this.carouselMode = 1; // 1-3: different display modes
     this.columnWidths = {
       time: 30,
       destination: 50,
@@ -24,8 +27,19 @@ class DepartureBoard {
     // Track last two languages used for rotation
     this.languageHistory = [];
 
+    // === TIME-BASED SETTINGS (EASILY CONFIGURABLE) ===
+    // Set these to control when the experience is active
+    this.IDLE_START_HOUR = 19; // 7:00 PM (24-hour format, 0-23)
+    this.IDLE_END_HOUR = 8; // 8:00 AM (24-hour format)
+    this.TIME_CHECK_INTERVAL = 1 * 60 * 1000; // Check every 15 minutes (in milliseconds)
+    // ================================================
+
+    this.isIdle = false;
+    this.timeCheckInterval = null;
+
     this.setupEventListeners();
     this.createSubtitleContainer();
+    this.createCarouselContainer();
   }
 
   initializeGSAP() {
@@ -66,6 +80,86 @@ class DepartureBoard {
     setTimeout(() => {
       this.selectRandomStory();
     }, 8000);
+
+    // Start time-based checking for idle state
+    this.startTimeBasedCheck();
+  }
+
+  startTimeBasedCheck() {
+    // Check immediately on start
+    this.updateIdleState();
+
+    // Then check every 15 minutes
+    this.timeCheckInterval = setInterval(() => {
+      this.updateIdleState();
+    }, this.TIME_CHECK_INTERVAL);
+  }
+
+  isCurrentlyInIdleHours() {
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    // If IDLE_END_HOUR is greater than IDLE_START_HOUR, it's a simple range (e.g., 19-23)
+    // If IDLE_END_HOUR is less than IDLE_START_HOUR, it spans midnight (e.g., 19-8)
+    if (this.IDLE_START_HOUR < this.IDLE_END_HOUR) {
+      // Simple range (e.g., 7-8, which doesn't make sense, so this won't happen in normal use)
+      return (
+        currentHour >= this.IDLE_START_HOUR && currentHour < this.IDLE_END_HOUR
+      );
+    } else {
+      // Range spans midnight (e.g., 19-8 means 7 PM to 8 AM)
+      return (
+        currentHour >= this.IDLE_START_HOUR || currentHour < this.IDLE_END_HOUR
+      );
+    }
+  }
+
+  updateIdleState() {
+    const shouldBeIdle = this.isCurrentlyInIdleHours();
+
+    if (shouldBeIdle && !this.isIdle) {
+      // Transition to IDLE state
+      this.enterIdleMode();
+    } else if (!shouldBeIdle && this.isIdle) {
+      // Transition out of IDLE state
+      this.exitIdleMode();
+    }
+  }
+
+  enterIdleMode() {
+    this.isIdle = true;
+    const idleScreen = document.getElementById("idle-screen");
+    if (idleScreen) {
+      idleScreen.classList.add("active");
+    }
+
+    // Stop any playing stories
+    this.currentPlayingStory = null;
+    this.activeQueue.forEach((story) => {
+      if (story.audioElement) {
+        story.audioElement.pause();
+        story.audioElement.currentTime = 0;
+      }
+      if (story.isPlaying) {
+        story.isPlaying = false;
+      }
+    });
+
+    // Hide dashboard and other UI
+    this.hideDashboard();
+    this.hideSubtitles();
+    this.hideCarousel();
+  }
+
+  exitIdleMode() {
+    this.isIdle = false;
+    const idleScreen = document.getElementById("idle-screen");
+    if (idleScreen) {
+      idleScreen.classList.remove("active");
+    }
+
+    // Reset and restart the experience
+    this.restartExperience();
   }
 
   generateCipherCodes() {
@@ -104,6 +198,15 @@ class DepartureBoard {
 
     document.addEventListener("storyFailed", (event) => {
       this.onStoryFailed(event.detail.storyId, event.detail.error);
+    });
+
+    // Keyboard controls for carousel mode (1-4)
+    document.addEventListener("keydown", (event) => {
+      if (event.key >= "1" && event.key <= "4") {
+        const mode = parseInt(event.key);
+        this.setCarouselMode(mode);
+        console.log(`Carousel mode changed to: ${mode}`);
+      }
     });
   }
 
@@ -172,6 +275,11 @@ class DepartureBoard {
   }
 
   selectRandomStory() {
+    // Don't select if in idle mode
+    if (this.isIdle) {
+      return;
+    }
+
     // Verify dashboard is in sync before selecting
     this.verifyDashboardSync();
 
@@ -222,12 +330,6 @@ class DepartureBoard {
     if (this.languageHistory.length > 2) {
       this.languageHistory.shift();
     }
-
-    console.log(
-      `Selected language: ${selectedLanguage}, History: [${this.languageHistory.join(
-        ", "
-      )}]`
-    );
 
     // console.log(
     //   `🎯 RANDOMLY SELECTED: Story ${selectedStory.id} - "${selectedStory.title}"`
@@ -477,20 +579,25 @@ class DepartureBoard {
   startStoryPlayback(story) {
     this.currentPlayingStory = story;
 
-    // Animate to GATEOPEN after short delay
+    // Animate to ARRIVING after short delay
     setTimeout(() => {
-      this.setStoryStatus(story, "GATEOPEN");
+      this.setStoryStatus(story, "ARRIVING");
 
       // Update internal status after animation starts
       setTimeout(() => {
-        this.currentPlayingStory.currentStatus = "GATEOPEN";
+        this.currentPlayingStory.currentStatus = "ARRIVING";
       }, 1000);
     }, 100);
 
-    // Show fullscreen subtitles after status change
+    // Show carousel 5 seconds after GATE OPEN display (5 second carousel display)
+    setTimeout(() => {
+      this.showCarousel(story, 5000); // 5 second carousel display
+    }, 6000); // Wait 5s after GATEOPEN animation (100ms + 1000ms for status update + 5s = ~6s)
+
+    // Show fullscreen subtitles after carousel
     setTimeout(() => {
       this.showFullscreenSubtitles(story);
-    }, 5000);
+    }, 11000); // 6s + 5s carousel duration
   }
 
   refreshDashboard() {
@@ -500,22 +607,22 @@ class DepartureBoard {
   }
 
   enforceGateOpenRule() {
-    // Ensure only the currently playing story has GATEOPEN status
+    // Ensure only the currently playing story has ARRIVING status
     this.activeQueue.forEach((story) => {
       if (
         story !== this.currentPlayingStory &&
-        story.currentStatus === "GATEOPEN"
+        story.currentStatus === "ARRIVING"
       ) {
         story.currentStatus = "ONTIME";
       }
     });
 
-    // Set playing story to GATEOPEN if it exists
+    // Set playing story to ARRIVING if it exists
     if (
       this.currentPlayingStory &&
-      this.currentPlayingStory.currentStatus !== "GATEOPEN"
+      this.currentPlayingStory.currentStatus !== "ARRIVING"
     ) {
-      this.currentPlayingStory.currentStatus = "GATEOPEN";
+      this.currentPlayingStory.currentStatus = "ARRIVING";
     }
   }
 
@@ -780,6 +887,9 @@ class DepartureBoard {
     // Initial render
     this.renderBoard();
 
+    // Show dashboard
+    this.showDashboard();
+
     // Start the selection cycle after delay
     setTimeout(() => {
       this.selectRandomStory();
@@ -815,6 +925,101 @@ class DepartureBoard {
       "visibility: hidden;" +
       "transition: opacity 0.5s ease, visibility 0.5s ease;";
     document.body.appendChild(this.subtitleContainer);
+  }
+
+  createCarouselContainer() {
+    this.carouselContainer = document.createElement("div");
+    this.carouselContainer.className = "fullscreen-carousel";
+    this.carouselContainer.style.cssText =
+      "position: fixed;" +
+      "top: 0;" +
+      "left: 0;" +
+      "width: 100vw;" +
+      "height: 100vh;" +
+      "background: rgba(0, 0, 0, 0.95);" +
+      "display: flex;" +
+      "flex-direction: column;" +
+      "justify-content: center;" +
+      "align-items: center;" +
+      "z-index: 999;" +
+      "opacity: 0;" +
+      "visibility: hidden;" +
+      "transition: opacity 0.5s ease, visibility 0.5s ease;";
+    document.body.appendChild(this.carouselContainer);
+  }
+
+  showCarousel(story, duration = 5000) {
+    if (this.isShowingCarousel) return;
+    this.isShowingCarousel = true;
+
+    // Hide dashboard
+    this.hideDashboard();
+
+    // Randomly select a carousel mode (1-3)
+    const randomMode = Math.floor(Math.random() * 3) + 1;
+
+    // Show carousel based on random mode
+    this.carouselContainer.innerHTML = "";
+    this.renderCarousel(story, randomMode);
+
+    this.carouselContainer.style.visibility = "visible";
+    this.carouselContainer.style.opacity = "1";
+
+    // Auto-hide after duration
+    setTimeout(() => {
+      this.hideCarousel();
+    }, duration);
+  }
+
+  hideCarousel() {
+    this.carouselContainer.style.opacity = "0";
+    setTimeout(() => {
+      this.carouselContainer.style.visibility = "hidden";
+      this.carouselContainer.innerHTML = "";
+      this.isShowingCarousel = false;
+    }, 500);
+  }
+
+  setCarouselMode(mode) {
+    // Validate mode is between 1-4
+    if (mode >= 1 && mode <= 4) {
+      this.carouselMode = mode;
+    }
+  }
+
+  renderCarousel(story, mode = 1) {
+    // Clear existing content
+    this.carouselContainer.innerHTML = "";
+
+    // Get the template for this mode
+    const templateId = `carousel-mode-${mode}`;
+    const template = document.getElementById(templateId);
+
+    if (!template) {
+      console.warn(`Carousel template ${templateId} not found`);
+      return;
+    }
+
+    // Clone the template
+    const content = template.content.cloneNode(true);
+
+    // Fill in story data
+    const fields = content.querySelectorAll("[data-field]");
+    fields.forEach((element) => {
+      const field = element.getAttribute("data-field");
+      let value = story[field] || "";
+
+      // Format values
+      if (field === "audioLanguage") {
+        value = value.toUpperCase();
+      } else if (field === "fromLocation" || field === "toLocation") {
+        value = value.toUpperCase();
+      }
+
+      element.textContent = value;
+    });
+
+    this.carouselContainer.appendChild(content);
   }
 
   // Simple dashboard visibility
