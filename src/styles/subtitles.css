@@ -22,6 +22,7 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    margin-top: 2rem;
     margin-bottom: 3rem;
     padding: 0 2rem;
 }
@@ -66,7 +67,7 @@
 }
 
 .subtitle-marquee {
-    font-size: 18rem;
+    font-size: 12rem;
     color: white;
     margin: 2rem 0;
     overflow: hidden;
@@ -102,7 +103,7 @@
 
 .subtitle-marquee.mandarin {
     color: #ffffff;
-    font-size: 18rem;
+    font-size: 12rem;
 }
 
 .subtitle-marquee.mandarin div {

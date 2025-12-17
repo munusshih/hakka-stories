@@ -240,7 +240,8 @@ class DepartureBoard {
     const hasValidAudio =
       selectedStory.audioFile &&
       selectedStory.audioFile.trim() !== "" &&
-      (selectedStory.audioFile.startsWith("/audio/") || selectedStory.audioFile.startsWith("./audio/")) &&
+      (selectedStory.audioFile.startsWith("/audio/") ||
+        selectedStory.audioFile.startsWith("./audio/")) &&
       selectedStory.audioDuration &&
       selectedStory.audioDuration !== "0:00" &&
       selectedStory.audioDuration !== "0:0" &&

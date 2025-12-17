@@ -27,6 +27,7 @@ body {
     font-family: 'Share Tech Mono', monospace;
     min-height: 100vh;
     text-transform: uppercase;
+    padding: 5rem 2rem;
 }
 
 .departure-board {
@@ -79,7 +80,7 @@ body {
 
 .board-columns {
     display: grid;
-    grid-template-columns: 1fr 3fr 1fr 1fr;
+    grid-template-columns: 3fr 10fr 3fr 3fr;
     background: #000;
     margin: 1rem;
 }
@@ -98,14 +99,14 @@ body {
 .destination-column .char,
 .id-column .char,
 .status-column .char {
-    border-color: #2a2a2a;
+    border: 0px !important;
     color: #fff;
-    font-size: 8rem;
+    font-size: 12rem;
 }
 
 .story-row {
     display: grid;
-    grid-template-columns: 1fr 3fr 1fr 1fr;
+    grid-template-columns: 3fr 10fr 3fr 3fr;
     transition: background 0.2s ease, opacity 0.5s ease, transform 0.5s ease;
     margin: 1rem;
     opacity: 1;
@@ -158,7 +159,7 @@ body {
 .marquee-text {
     display: inline-block;
     font-family: 'PegHoles', monospace;
-    font-size: 8rem;
+    font-size: 12rem;
     font-weight: normal;
     white-space: nowrap;
     animation: marqueeScroll var(--marquee-duration, 15s) linear infinite;

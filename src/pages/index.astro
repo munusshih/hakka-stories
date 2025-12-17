@@ -12,11 +12,11 @@ const rawStoriesData = JSON.parse(
 );
 
 // Convert absolute audio paths to relative paths
-const storiesData = rawStoriesData.map(story => ({
+const storiesData = rawStoriesData.map((story) => ({
   ...story,
-  "Audio File": story["Audio File"]?.startsWith("/audio/") 
-    ? "." + story["Audio File"] 
-    : story["Audio File"]
+  "Audio File": story["Audio File"]?.startsWith("/audio/")
+    ? "." + story["Audio File"]
+    : story["Audio File"],
 }));
 
 // Read CSS files

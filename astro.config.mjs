@@ -3,9 +3,9 @@ import { defineConfig } from "astro/config";
 // https://astro.build/config
 export default defineConfig({
   build: {
-    format: 'file'
+    format: "file",
   },
-  base: './',
+  base: "./",
   vite: {
     ssr: {
       external: ["music-metadata"],
