@@ -29,9 +29,9 @@ class DepartureBoard {
 
     // === TIME-BASED SETTINGS (EASILY CONFIGURABLE) ===
     // Set these to control when the experience is active
-    this.IDLE_START_HOUR = 19; // 7:00 PM (24-hour format, 0-23)
-    this.IDLE_END_HOUR = 8; // 8:00 AM (24-hour format)
-    this.TIME_CHECK_INTERVAL = 1 * 60 * 1000; // Check every 15 minutes (in milliseconds)
+    this.IDLE_START_HOUR = 20; // 8:00 PM (24-hour format, 0-23)
+    this.IDLE_END_HOUR = 11; // 11:00 AM (24-hour format)
+    this.TIME_CHECK_INTERVAL = 15 * 60 * 1000; // Check every 15 minutes (in milliseconds)
     // ================================================
 
     this.isIdle = false;
@@ -915,7 +915,7 @@ class DepartureBoard {
       "left: 0;" +
       "width: 100vw;" +
       "height: 100vh;" +
-      "background: rgba(0, 0, 0, 0.9);" +
+      "background: var(--bg-color);" +
       "display: flex;" +
       "flex-direction: column;" +
       "justify-content: center;" +
@@ -936,7 +936,7 @@ class DepartureBoard {
       "left: 0;" +
       "width: 100vw;" +
       "height: 100vh;" +
-      "background: rgba(0, 0, 0, 0.95);" +
+      "background: var(--bg-color);" +
       "display: flex;" +
       "flex-direction: column;" +
       "justify-content: center;" +

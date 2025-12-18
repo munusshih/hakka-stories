@@ -104,7 +104,7 @@ const departureBoardJS = fs
     <div id="idle-screen" class="idle-screen">
       <div class="idle-content">
         <p>CLOSED</p>
-        <p>Experience will resume at 8:00 AM</p>
+        <p>Experience will resume at 11:00 AM</p>
       </div>
     </div>
 
@@ -234,6 +234,21 @@ const departureBoardJS = fs
         }
       }
 
+      // Cursor auto-hide functionality
+      let cursorTimeout;
+      
+      function showCursor() {
+        document.body.classList.remove('hide-cursor');
+        clearTimeout(cursorTimeout);
+        cursorTimeout = setTimeout(() => {
+          document.body.classList.add('hide-cursor');
+        }, 3000);
+      }
+      
+      function resetCursorTimer() {
+        showCursor();
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         // Set up popup button handler
         const unlockBtn = document.getElementById("audio-unlock-btn");
@@ -243,6 +258,15 @@ const departureBoardJS = fs
 
         // Also allow pressing any key or clicking anywhere to dismiss
         document.addEventListener("keydown", dismissAudioPopup, { once: true });
+        
+        // Set up cursor auto-hide on mouse movement
+        document.addEventListener('mousemove', resetCursorTimer);
+        document.addEventListener('mousedown', resetCursorTimer);
+        document.addEventListener('keydown', resetCursorTimer);
+        document.addEventListener('touchstart', resetCursorTimer);
+        
+        // Start the cursor hide timer
+        resetCursorTimer();
       });
     </script>
   </body>
