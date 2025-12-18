@@ -164,6 +164,7 @@ async function processAudioFiles(data) {
   return processedData;
 }
 
+// Update the main function
 async function main() {
   try {
     console.log("Starting data fetch and processing...");
@@ -179,7 +180,7 @@ async function main() {
     // Process any MP3 files
     const processedData = await processAudioFiles(rawData);
 
-    // Convert to clean JSON format
+    // Convert to clean JSON format (now includes FromChinese and ToChinese directly)
     const jsonData = convertToJSON(processedData);
 
     // Write JSON file

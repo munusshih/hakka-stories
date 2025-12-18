@@ -68,6 +68,9 @@ class DepartureBoard {
     this.allStories = storiesData.map((data) => new Story(data));
     this.bin = [];
 
+    // Define a variable for the dashboard timeout duration
+    this.DASHBOARD_TIMEOUT = 10000; // Default is 10 seconds
+
     // Generate cipher codes for all stories
     this.generateCipherCodes();
 
@@ -79,7 +82,7 @@ class DepartureBoard {
 
     setTimeout(() => {
       this.selectRandomStory();
-    }, 8000);
+    }, this.DASHBOARD_TIMEOUT);
 
     // Start time-based checking for idle state
     this.startTimeBasedCheck();
