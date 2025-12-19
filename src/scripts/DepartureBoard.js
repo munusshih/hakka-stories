@@ -152,6 +152,14 @@ class DepartureBoard {
     this.hideDashboard();
     this.hideSubtitles();
     this.hideCarousel();
+
+    // Play a very low-volume sound to keep the speaker active
+    this.idleAudio = new Audio("./audio/idle-sound.mp3"); // Replace with the actual path to the sound file
+    this.idleAudio.loop = true;
+    this.idleAudio.volume = 0.025; // Set to a very low volume
+    this.idleAudio.play().catch((error) => {
+      console.warn("Idle audio failed to play:", error);
+    });
   }
 
   exitIdleMode() {
@@ -159,6 +167,12 @@ class DepartureBoard {
     const idleScreen = document.getElementById("idle-screen");
     if (idleScreen) {
       idleScreen.classList.remove("active");
+    }
+
+    // Stop idle audio if it's playing
+    if (this.idleAudio) {
+      this.idleAudio.pause();
+      this.idleAudio.currentTime = 0;
     }
 
     // Reset and restart the experience
